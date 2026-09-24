@@ -17,7 +17,7 @@ import numpy as np
 
 from model.config import ARTIFACTS, POSE_MODELS
 from model.extract_landmarks import pose_video
-from model.features import (MIN_REPS_FOR_RELATIVE, SIDES, Series, _points, add_relative, compute_series,
+from model.features import (MIN_BASELINE_REPS, SIDES, Series, _points, add_relative, compute_series,
                             rep_features, segment_reps)
 
 POSE_VARIANT = "full"
@@ -115,14 +115,16 @@ def quality_check(lm: dict, s: Series, n_reps: int) -> dict:
     }
 
 
-def _model_scores(feats: list[dict]):
-    """Returns (probabilities, per-rep top reasons) or (None, None) when there are too few reps."""
-    if len(feats) < MIN_REPS_FOR_RELATIVE:
+def _model_scores(feats: list[dict], baseline: list[dict] | None):
+    """Returns (probabilities, per-rep top reasons), or (None, None) without an approved baseline."""
+    if not feats or not baseline or len(baseline) < MIN_BASELINE_REPS:
         return None, None
     import xgboost as xgb
 
     model, meta = _classifier()
-    rel = add_relative(feats)
+    rel = add_relative(feats, baseline)
+    # A reason is only worth saying if the change exceeds the patient's normal rep-to-rep spread.
+    spread = {b: float(np.nanstd([x[b] for x in baseline], ddof=1)) for b in REASONS}
     X = np.array([[r[f] for f in meta["features"]] for r in rel], dtype=np.float32)
     dm = xgb.DMatrix(X, feature_names=meta["features"])
     prob = model.predict(dm)
@@ -131,9 +133,10 @@ def _model_scores(feats: list[dict]):
     for r, c in zip(rel, contrib):
         by_base = {}
         for f, v in zip(meta["features"], c):
-            base = f.rsplit("_", 1)[0]
+            base = f.removesuffix("_rel")
             by_base[base] = by_base.get(base, 0.0) + float(v)
-        top = [b for b, v in sorted(by_base.items(), key=lambda x: -x[1]) if v > 0 and b in REASONS][:2]
+        top = [b for b, v in sorted(by_base.items(), key=lambda x: -x[1])
+               if v > 0 and b in REASONS and abs(r[b + "_rel"]) > max(spread[b], 1e-6)][:2]
         out = []
         for b in top:
             what, unit, more, less = REASONS[b]
@@ -143,8 +146,12 @@ def _model_scores(feats: list[dict]):
     return prob, reasons
 
 
-def analyze_landmarks(lm: dict, exercise: str = "squat", protocol: dict | None = None) -> dict:
-    """Everything after pose estimation. Split out so tests and evaluation can reuse landmarks."""
+def analyze_landmarks(lm: dict, exercise: str = "squat", protocol: dict | None = None,
+                      baseline: list[dict] | None = None) -> dict:
+    """Everything after pose estimation. Split out so tests and evaluation can reuse landmarks.
+
+    baseline: per-rep feature dicts (reps[].features) from the patient's physio-approved reps. With
+    fewer than MIN_BASELINE_REPS, correctness is judged by rules only."""
     if exercise != "squat":
         raise ValueError(f"exercise {exercise!r} is not supported by the model pipeline")
     protocol = {**DEFAULT_PROTOCOL, **(protocol or {})}
@@ -153,7 +160,7 @@ def analyze_landmarks(lm: dict, exercise: str = "squat", protocol: dict | None =
     reps = segment_reps(s.knee, fps)
     feats = [rep_features(s, r) for r in reps]
     quality = quality_check(lm, s, len(reps))
-    prob, model_reasons = _model_scores(feats)
+    prob, model_reasons = _model_scores(feats, baseline)
     _, meta = _classifier()
     threshold = meta["threshold"]
 
@@ -177,9 +184,8 @@ def analyze_landmarks(lm: dict, exercise: str = "squat", protocol: dict | None =
         model_flag = p is not None and p >= threshold
         if model_flag:
             reasons = model_reasons[i] + reasons
-        # The classifier is the validated component, so it decides when available. Rule findings
-        # (depth, lean, speed) stay visible to the physio as notes. With < 3 reps there is no
-        # model score and the rules decide.
+        # The classifier decides when there is an approved baseline to compare against. Rule findings
+        # (depth, lean, speed) stay visible to the physio as notes. Without a baseline the rules decide.
         if p is not None:
             predicted_correct = not model_flag
         else:
@@ -194,6 +200,7 @@ def analyze_landmarks(lm: dict, exercise: str = "squat", protocol: dict | None =
             "predicted_correct": predicted_correct,
             "probability_incorrect": _num(p, 3),
             "flag_reasons": reasons,
+            "features": {k: _num(v, 4) for k, v in f.items()},  # raw per-rep features; future baselines
         })
         for x in reasons[:1]:
             evidence.append({"repetition": r.index, "observation": x["message"], "value": x["value"],
@@ -229,7 +236,8 @@ def analyze_landmarks(lm: dict, exercise: str = "squat", protocol: dict | None =
     if n:
         observations.append(f"Detected {n} squat repetitions; {reached} reached the target depth of {target_depth:.0f}°.")
         if prob is None:
-            observations.append("Fewer than 3 reps, so reps were checked with rules only (no model comparison).")
+            observations.append("Reps were checked with rules only. Once your physiotherapist approves a session, "
+                                "later sessions are compared with your approved form.")
         if flagged_reps:
             observations.append(f"{len(flagged_reps)} reps were flagged for your physiotherapist to review.")
     observations.extend(quality["instructions"])
@@ -270,12 +278,13 @@ def analyze_landmarks(lm: dict, exercise: str = "squat", protocol: dict | None =
         },
         "annotated_video_url": None,
         "model": {"pose_model": f"mediapipe_pose_landmarker_{POSE_VARIANT}",
-                  "classifier": meta["version"] if prob is not None else None, "threshold": threshold},
+                  "classifier": meta["version"] if prob is not None else None, "threshold": threshold,
+                  "baseline_reps": len(baseline or []) if prob is not None else 0},
     }
 
 
 def analyze_video(path: str, exercise: str = "squat", protocol: dict | None = None,
-                  annotated_path: str | None = None, progress=None) -> dict:
+                  annotated_path: str | None = None, progress=None, baseline: list[dict] | None = None) -> dict:
     """Pose → reps → features → rules + classifier → AnalysisResult. Optionally renders an annotated MP4.
 
     progress: optional callable(stage, fraction) with stage in {"pose", "analyze", "render"}."""
@@ -283,7 +292,7 @@ def analyze_video(path: str, exercise: str = "squat", protocol: dict | None = No
     lm = pose_video(str(path), str(POSE_MODELS / f"pose_landmarker_{POSE_VARIANT}.task"),
                     progress=lambda f: report("pose", f))
     report("analyze", 0.0)
-    result = analyze_landmarks(lm, exercise, protocol)
+    result = analyze_landmarks(lm, exercise, protocol, baseline)
     result["processing_s"] = round(float(lm["seconds"]), 2)
     if annotated_path:
         report("render", 0.0)

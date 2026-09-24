@@ -3,7 +3,7 @@
  "source": "upload",
  "exercise": "squat",
  "status": "complete",
- "analyzed_at": "2026-09-24T02:15:11+00:00",
+ "analyzed_at": "2026-09-24T02:30:08+00:00",
  "origin": "local_mediapipe_xgboost",
  "form_score": 77,
  "repetitions": 21,
@@ -68,9 +68,9 @@
   },
   {
    "repetition": 16,
-   "observation": "Started straighter than usual",
-   "value": 178.03,
-   "unit": "degrees"
+   "observation": "Shorter pause at the bottom",
+   "value": 0.13,
+   "unit": "s"
   },
   {
    "repetition": 17,
@@ -80,9 +80,9 @@
   },
   {
    "repetition": 18,
-   "observation": "Started straighter than usual",
-   "value": 176.97,
-   "unit": "degrees"
+   "observation": "Knee travelled further forward than usual",
+   "value": 0.44,
+   "unit": "shin lengths"
   },
   {
    "repetition": 19,
@@ -92,9 +92,9 @@
   },
   {
    "repetition": 20,
-   "observation": "Started straighter than usual",
-   "value": 177.48,
-   "unit": "degrees"
+   "observation": "Went down faster than usual",
+   "value": 217.94,
+   "unit": "deg/s"
   },
   {
    "repetition": 21,
@@ -169,7 +169,7 @@
    "ascent_s": 1.13,
    "trunk_lean_max_deg": 34.7,
    "predicted_correct": true,
-   "probability_incorrect": 0.005,
+   "probability_incorrect": 0.153,
    "flag_reasons": [
     {
      "code": "shallow_depth",
@@ -177,7 +177,30 @@
      "unit": "degrees",
      "message": "Did not reach the target depth (103\u00b0 vs target 100\u00b0)"
     }
-   ]
+   ],
+   "features": {
+    "min_knee_angle": 103.0364,
+    "knee_rom": 69.893,
+    "start_knee_angle": 172.9295,
+    "end_knee_angle": 158.3709,
+    "min_hip_angle": 89.7115,
+    "hip_rom": 89.6927,
+    "hip_knee_ratio": 1.2833,
+    "trunk_lean_max": 34.7178,
+    "trunk_lean_bottom": 34.6741,
+    "knee_travel_max": 0.3632,
+    "duration_s": 4.8667,
+    "descent_s": 3.7333,
+    "ascent_s": 1.1333,
+    "descent_ascent_ratio": 3.2286,
+    "peak_descent_speed": 74.6644,
+    "peak_ascent_speed": 92.4276,
+    "jerk_rms": 3999.8274,
+    "bottom_pause_s": 0.5,
+    "asymmetry_bottom": 3.8063,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 2,
@@ -192,8 +215,31 @@
    "ascent_s": 1.33,
    "trunk_lean_max_deg": 38.8,
    "predicted_correct": true,
-   "probability_incorrect": 0.005,
-   "flag_reasons": []
+   "probability_incorrect": 0.006,
+   "flag_reasons": [],
+   "features": {
+    "min_knee_angle": 89.938,
+    "knee_rom": 74.3266,
+    "start_knee_angle": 158.3709,
+    "end_knee_angle": 164.2646,
+    "min_hip_angle": 74.8043,
+    "hip_rom": 88.3955,
+    "hip_knee_ratio": 1.1893,
+    "trunk_lean_max": 38.8112,
+    "trunk_lean_bottom": 38.7904,
+    "knee_travel_max": 0.297,
+    "duration_s": 2.9333,
+    "descent_s": 1.6,
+    "ascent_s": 1.3333,
+    "descent_ascent_ratio": 1.1951,
+    "peak_descent_speed": 85.7091,
+    "peak_ascent_speed": 93.93,
+    "jerk_rms": 4934.4085,
+    "bottom_pause_s": 0.4667,
+    "asymmetry_bottom": 7.2354,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 3,
@@ -208,8 +254,31 @@
    "ascent_s": 1.5,
    "trunk_lean_max_deg": 38.6,
    "predicted_correct": true,
-   "probability_incorrect": 0.01,
-   "flag_reasons": []
+   "probability_incorrect": 0.149,
+   "flag_reasons": [],
+   "features": {
+    "min_knee_angle": 88.2515,
+    "knee_rom": 76.0131,
+    "start_knee_angle": 164.2646,
+    "end_knee_angle": 158.6354,
+    "min_hip_angle": 72.1349,
+    "hip_rom": 91.0649,
+    "hip_knee_ratio": 1.198,
+    "trunk_lean_max": 38.5734,
+    "trunk_lean_bottom": 38.3617,
+    "knee_travel_max": 0.2988,
+    "duration_s": 2.9667,
+    "descent_s": 1.4667,
+    "ascent_s": 1.5,
+    "descent_ascent_ratio": 0.9783,
+    "peak_descent_speed": 94.2922,
+    "peak_ascent_speed": 94.2948,
+    "jerk_rms": 4514.9279,
+    "bottom_pause_s": 0.5667,
+    "asymmetry_bottom": 6.7162,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 4,
@@ -224,8 +293,31 @@
    "ascent_s": 1.43,
    "trunk_lean_max_deg": 33.6,
    "predicted_correct": true,
-   "probability_incorrect": 0.007,
-   "flag_reasons": []
+   "probability_incorrect": 0.045,
+   "flag_reasons": [],
+   "features": {
+    "min_knee_angle": 88.3558,
+    "knee_rom": 70.2796,
+    "start_knee_angle": 158.6354,
+    "end_knee_angle": 158.0687,
+    "min_hip_angle": 83.0,
+    "hip_rom": 86.8446,
+    "hip_knee_ratio": 1.2357,
+    "trunk_lean_max": 33.6047,
+    "trunk_lean_bottom": 33.3821,
+    "knee_travel_max": 0.2182,
+    "duration_s": 2.7333,
+    "descent_s": 1.3,
+    "ascent_s": 1.4333,
+    "descent_ascent_ratio": 0.9091,
+    "peak_descent_speed": 99.5128,
+    "peak_ascent_speed": 86.5181,
+    "jerk_rms": 4847.9825,
+    "bottom_pause_s": 0.4667,
+    "asymmetry_bottom": 5.6763,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 5,
@@ -241,7 +333,30 @@
    "trunk_lean_max_deg": 33.9,
    "predicted_correct": true,
    "probability_incorrect": 0.021,
-   "flag_reasons": []
+   "flag_reasons": [],
+   "features": {
+    "min_knee_angle": 92.664,
+    "knee_rom": 81.8336,
+    "start_knee_angle": 158.0687,
+    "end_knee_angle": 174.4976,
+    "min_hip_angle": 82.4825,
+    "hip_rom": 97.3992,
+    "hip_knee_ratio": 1.1902,
+    "trunk_lean_max": 33.9012,
+    "trunk_lean_bottom": 33.8498,
+    "knee_travel_max": 0.3485,
+    "duration_s": 5.9,
+    "descent_s": 1.3667,
+    "ascent_s": 4.5333,
+    "descent_ascent_ratio": 0.3066,
+    "peak_descent_speed": 102.7525,
+    "peak_ascent_speed": 95.8302,
+    "jerk_rms": 3533.316,
+    "bottom_pause_s": 0.5667,
+    "asymmetry_bottom": 8.0497,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 6,
@@ -256,7 +371,7 @@
    "ascent_s": 1.33,
    "trunk_lean_max_deg": 46.4,
    "predicted_correct": true,
-   "probability_incorrect": 0.047,
+   "probability_incorrect": 0.054,
    "flag_reasons": [
     {
      "code": "trunk_lean",
@@ -264,7 +379,30 @@
      "unit": "degrees",
      "message": "Leaned forward 46\u00b0 (limit 45\u00b0)"
     }
-   ]
+   ],
+   "features": {
+    "min_knee_angle": 72.104,
+    "knee_rom": 105.691,
+    "start_knee_angle": 174.4976,
+    "end_knee_angle": 177.795,
+    "min_hip_angle": 63.4923,
+    "hip_rom": 111.0483,
+    "hip_knee_ratio": 1.0507,
+    "trunk_lean_max": 46.4215,
+    "trunk_lean_bottom": 45.212,
+    "knee_travel_max": 0.3461,
+    "duration_s": 3.6667,
+    "descent_s": 2.3333,
+    "ascent_s": 1.3333,
+    "descent_ascent_ratio": 1.7317,
+    "peak_descent_speed": 112.7768,
+    "peak_ascent_speed": 148.0395,
+    "jerk_rms": 7743.011,
+    "bottom_pause_s": 0.4333,
+    "asymmetry_bottom": 3.7311,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 7,
@@ -279,8 +417,31 @@
    "ascent_s": 1.53,
    "trunk_lean_max_deg": 42.9,
    "predicted_correct": true,
-   "probability_incorrect": 0.175,
-   "flag_reasons": []
+   "probability_incorrect": 0.048,
+   "flag_reasons": [],
+   "features": {
+    "min_knee_angle": 60.7996,
+    "knee_rom": 116.9954,
+    "start_knee_angle": 177.795,
+    "end_knee_angle": 175.2883,
+    "min_hip_angle": 59.6898,
+    "hip_rom": 114.5026,
+    "hip_knee_ratio": 0.9787,
+    "trunk_lean_max": 42.9139,
+    "trunk_lean_bottom": 41.1315,
+    "knee_travel_max": 0.3374,
+    "duration_s": 3.4,
+    "descent_s": 1.8667,
+    "ascent_s": 1.5333,
+    "descent_ascent_ratio": 1.2128,
+    "peak_descent_speed": 106.0109,
+    "peak_ascent_speed": 145.1924,
+    "jerk_rms": 5802.5027,
+    "bottom_pause_s": 0.4,
+    "asymmetry_bottom": 0.1885,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 8,
@@ -295,7 +456,7 @@
    "ascent_s": 1.57,
    "trunk_lean_max_deg": 50.2,
    "predicted_correct": true,
-   "probability_incorrect": 0.115,
+   "probability_incorrect": 0.166,
    "flag_reasons": [
     {
      "code": "trunk_lean",
@@ -303,7 +464,30 @@
      "unit": "degrees",
      "message": "Leaned forward 50\u00b0 (limit 45\u00b0)"
     }
-   ]
+   ],
+   "features": {
+    "min_knee_angle": 63.712,
+    "knee_rom": 111.5763,
+    "start_knee_angle": 175.2883,
+    "end_knee_angle": 173.8727,
+    "min_hip_angle": 55.4678,
+    "hip_rom": 113.5277,
+    "hip_knee_ratio": 1.0175,
+    "trunk_lean_max": 50.2096,
+    "trunk_lean_bottom": 48.9702,
+    "knee_travel_max": 0.3086,
+    "duration_s": 3.2667,
+    "descent_s": 1.7,
+    "ascent_s": 1.5667,
+    "descent_ascent_ratio": 1.0833,
+    "peak_descent_speed": 135.4229,
+    "peak_ascent_speed": 104.2251,
+    "jerk_rms": 5688.2923,
+    "bottom_pause_s": 0.3667,
+    "asymmetry_bottom": 1.1129,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 9,
@@ -318,7 +502,7 @@
    "ascent_s": 1.43,
    "trunk_lean_max_deg": 48.6,
    "predicted_correct": true,
-   "probability_incorrect": 0.103,
+   "probability_incorrect": 0.152,
    "flag_reasons": [
     {
      "code": "trunk_lean",
@@ -326,7 +510,30 @@
      "unit": "degrees",
      "message": "Leaned forward 49\u00b0 (limit 45\u00b0)"
     }
-   ]
+   ],
+   "features": {
+    "min_knee_angle": 61.7076,
+    "knee_rom": 112.7946,
+    "start_knee_angle": 173.8727,
+    "end_knee_angle": 174.5022,
+    "min_hip_angle": 52.8166,
+    "hip_rom": 108.0533,
+    "hip_knee_ratio": 0.958,
+    "trunk_lean_max": 48.5663,
+    "trunk_lean_bottom": 48.5663,
+    "knee_travel_max": 0.2981,
+    "duration_s": 3.0667,
+    "descent_s": 1.6333,
+    "ascent_s": 1.4333,
+    "descent_ascent_ratio": 1.1364,
+    "peak_descent_speed": 175.8843,
+    "peak_ascent_speed": 122.0657,
+    "jerk_rms": 8735.1666,
+    "bottom_pause_s": 0.3667,
+    "asymmetry_bottom": 1.4947,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 10,
@@ -341,7 +548,7 @@
    "ascent_s": 2.23,
    "trunk_lean_max_deg": 49.6,
    "predicted_correct": true,
-   "probability_incorrect": 0.125,
+   "probability_incorrect": 0.145,
    "flag_reasons": [
     {
      "code": "trunk_lean",
@@ -349,7 +556,30 @@
      "unit": "degrees",
      "message": "Leaned forward 50\u00b0 (limit 45\u00b0)"
     }
-   ]
+   ],
+   "features": {
+    "min_knee_angle": 62.1395,
+    "knee_rom": 117.4085,
+    "start_knee_angle": 174.5022,
+    "end_knee_angle": 179.548,
+    "min_hip_angle": 48.7393,
+    "hip_rom": 130.3824,
+    "hip_knee_ratio": 1.1105,
+    "trunk_lean_max": 49.5992,
+    "trunk_lean_bottom": 49.4374,
+    "knee_travel_max": 0.3294,
+    "duration_s": 4.0333,
+    "descent_s": 1.8,
+    "ascent_s": 2.2333,
+    "descent_ascent_ratio": 0.8088,
+    "peak_descent_speed": 122.1018,
+    "peak_ascent_speed": 157.2071,
+    "jerk_rms": 7008.5046,
+    "bottom_pause_s": 0.3333,
+    "asymmetry_bottom": 0.4297,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 11,
@@ -364,7 +594,7 @@
    "ascent_s": 1.4,
    "trunk_lean_max_deg": 20.5,
    "predicted_correct": true,
-   "probability_incorrect": 0.009,
+   "probability_incorrect": 0.027,
    "flag_reasons": [
     {
      "code": "shallow_depth",
@@ -372,7 +602,30 @@
      "unit": "degrees",
      "message": "Did not reach the target depth (109\u00b0 vs target 100\u00b0)"
     }
-   ]
+   ],
+   "features": {
+    "min_knee_angle": 109.4788,
+    "knee_rom": 65.6845,
+    "start_knee_angle": 175.1633,
+    "end_knee_angle": 171.868,
+    "min_hip_angle": 109.21,
+    "hip_rom": 70.3243,
+    "hip_knee_ratio": 1.0706,
+    "trunk_lean_max": 20.5044,
+    "trunk_lean_bottom": 20.5044,
+    "knee_travel_max": 0.151,
+    "duration_s": 4.0667,
+    "descent_s": 2.6667,
+    "ascent_s": 1.4,
+    "descent_ascent_ratio": 1.8837,
+    "peak_descent_speed": 74.3457,
+    "peak_ascent_speed": 109.3917,
+    "jerk_rms": 5223.4015,
+    "bottom_pause_s": 0.2333,
+    "asymmetry_bottom": 5.8383,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 12,
@@ -387,7 +640,7 @@
    "ascent_s": 1.27,
    "trunk_lean_max_deg": 17.9,
    "predicted_correct": true,
-   "probability_incorrect": 0.007,
+   "probability_incorrect": 0.027,
    "flag_reasons": [
     {
      "code": "shallow_depth",
@@ -395,7 +648,30 @@
      "unit": "degrees",
      "message": "Did not reach the target depth (109\u00b0 vs target 100\u00b0)"
     }
-   ]
+   ],
+   "features": {
+    "min_knee_angle": 109.0793,
+    "knee_rom": 64.8579,
+    "start_knee_angle": 171.868,
+    "end_knee_angle": 173.9372,
+    "min_hip_angle": 115.8698,
+    "hip_rom": 63.1882,
+    "hip_knee_ratio": 0.9743,
+    "trunk_lean_max": 17.909,
+    "trunk_lean_bottom": 17.8939,
+    "knee_travel_max": 0.1659,
+    "duration_s": 3.3,
+    "descent_s": 2.0333,
+    "ascent_s": 1.2667,
+    "descent_ascent_ratio": 1.5897,
+    "peak_descent_speed": 94.9285,
+    "peak_ascent_speed": 105.7825,
+    "jerk_rms": 4278.6383,
+    "bottom_pause_s": 0.3,
+    "asymmetry_bottom": 5.4976,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 13,
@@ -410,8 +686,31 @@
    "ascent_s": 1.4,
    "trunk_lean_max_deg": 18.4,
    "predicted_correct": true,
-   "probability_incorrect": 0.017,
-   "flag_reasons": []
+   "probability_incorrect": 0.04,
+   "flag_reasons": [],
+   "features": {
+    "min_knee_angle": 99.7022,
+    "knee_rom": 74.235,
+    "start_knee_angle": 173.9372,
+    "end_knee_angle": 172.2602,
+    "min_hip_angle": 106.4867,
+    "hip_rom": 72.7321,
+    "hip_knee_ratio": 0.9798,
+    "trunk_lean_max": 18.3669,
+    "trunk_lean_bottom": 18.3669,
+    "knee_travel_max": 0.1813,
+    "duration_s": 2.9667,
+    "descent_s": 1.5667,
+    "ascent_s": 1.4,
+    "descent_ascent_ratio": 1.1163,
+    "peak_descent_speed": 97.9088,
+    "peak_ascent_speed": 139.4977,
+    "jerk_rms": 8313.5592,
+    "bottom_pause_s": 0.2333,
+    "asymmetry_bottom": 3.9735,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 14,
@@ -426,7 +725,7 @@
    "ascent_s": 1.47,
    "trunk_lean_max_deg": 15.0,
    "predicted_correct": true,
-   "probability_incorrect": 0.036,
+   "probability_incorrect": 0.134,
    "flag_reasons": [
     {
      "code": "shallow_depth",
@@ -434,7 +733,30 @@
      "unit": "degrees",
      "message": "Did not reach the target depth (108\u00b0 vs target 100\u00b0)"
     }
-   ]
+   ],
+   "features": {
+    "min_knee_angle": 108.1011,
+    "knee_rom": 66.3817,
+    "start_knee_angle": 172.2602,
+    "end_knee_angle": 174.4827,
+    "min_hip_angle": 120.1841,
+    "hip_rom": 59.2714,
+    "hip_knee_ratio": 0.8929,
+    "trunk_lean_max": 15.0138,
+    "trunk_lean_bottom": 15.0138,
+    "knee_travel_max": 0.2117,
+    "duration_s": 2.8667,
+    "descent_s": 1.4,
+    "ascent_s": 1.4667,
+    "descent_ascent_ratio": 0.9556,
+    "peak_descent_speed": 96.799,
+    "peak_ascent_speed": 127.2053,
+    "jerk_rms": 5701.1949,
+    "bottom_pause_s": 0.3333,
+    "asymmetry_bottom": 9.7095,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 15,
@@ -449,8 +771,31 @@
    "ascent_s": 1.47,
    "trunk_lean_max_deg": 16.6,
    "predicted_correct": true,
-   "probability_incorrect": 0.069,
-   "flag_reasons": []
+   "probability_incorrect": 0.123,
+   "flag_reasons": [],
+   "features": {
+    "min_knee_angle": 89.7335,
+    "knee_rom": 88.2959,
+    "start_knee_angle": 174.4827,
+    "end_knee_angle": 178.0294,
+    "min_hip_angle": 100.1228,
+    "hip_rom": 79.1801,
+    "hip_knee_ratio": 0.8968,
+    "trunk_lean_max": 16.6143,
+    "trunk_lean_bottom": 16.5239,
+    "knee_travel_max": 0.2345,
+    "duration_s": 3.0,
+    "descent_s": 1.5333,
+    "ascent_s": 1.4667,
+    "descent_ascent_ratio": 1.0444,
+    "peak_descent_speed": 119.7163,
+    "peak_ascent_speed": 127.9138,
+    "jerk_rms": 7869.0624,
+    "bottom_pause_s": 0.2,
+    "asymmetry_bottom": 1.5782,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 16,
@@ -465,23 +810,46 @@
    "ascent_s": 1.5,
    "trunk_lean_max_deg": 30.7,
    "predicted_correct": false,
-   "probability_incorrect": 0.365,
+   "probability_incorrect": 0.38,
    "flag_reasons": [
     {
      "code": "model_incorrect",
-     "message": "Started straighter than usual",
-     "value": 178.03,
-     "unit": "degrees",
-     "feature": "start_knee_angle"
+     "message": "Shorter pause at the bottom",
+     "value": 0.13,
+     "unit": "s",
+     "feature": "bottom_pause_s"
     },
     {
      "code": "model_incorrect",
-     "message": "Legs more uneven than usual",
-     "value": 11.87,
-     "unit": "degrees",
-     "feature": "asymmetry_bottom"
+     "message": "Went down faster than usual",
+     "value": 165.4,
+     "unit": "deg/s",
+     "feature": "peak_descent_speed"
     }
-   ]
+   ],
+   "features": {
+    "min_knee_angle": 85.1199,
+    "knee_rom": 92.9095,
+    "start_knee_angle": 178.0294,
+    "end_knee_angle": 177.708,
+    "min_hip_angle": 84.9755,
+    "hip_rom": 94.3364,
+    "hip_knee_ratio": 1.0154,
+    "trunk_lean_max": 30.6792,
+    "trunk_lean_bottom": 30.3886,
+    "knee_travel_max": 0.3378,
+    "duration_s": 4.5,
+    "descent_s": 3.0,
+    "ascent_s": 1.5,
+    "descent_ascent_ratio": 1.9783,
+    "peak_descent_speed": 165.404,
+    "peak_ascent_speed": 159.1954,
+    "jerk_rms": 16880.1814,
+    "bottom_pause_s": 0.1333,
+    "asymmetry_bottom": 11.8722,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 17,
@@ -496,7 +864,7 @@
    "ascent_s": 1.4,
    "trunk_lean_max_deg": 38.9,
    "predicted_correct": false,
-   "probability_incorrect": 0.9,
+   "probability_incorrect": 0.811,
    "flag_reasons": [
     {
      "code": "model_incorrect",
@@ -507,12 +875,35 @@
     },
     {
      "code": "model_incorrect",
-     "message": "Started straighter than usual",
-     "value": 177.71,
-     "unit": "degrees",
-     "feature": "start_knee_angle"
+     "message": "Went down faster than usual",
+     "value": 208.89,
+     "unit": "deg/s",
+     "feature": "peak_descent_speed"
     }
-   ]
+   ],
+   "features": {
+    "min_knee_angle": 75.799,
+    "knee_rom": 101.9089,
+    "start_knee_angle": 177.708,
+    "end_knee_angle": 176.9687,
+    "min_hip_angle": 85.8006,
+    "hip_rom": 93.4546,
+    "hip_knee_ratio": 0.917,
+    "trunk_lean_max": 38.901,
+    "trunk_lean_bottom": 29.2795,
+    "knee_travel_max": 0.4782,
+    "duration_s": 3.2333,
+    "descent_s": 1.8333,
+    "ascent_s": 1.4,
+    "descent_ascent_ratio": 1.3023,
+    "peak_descent_speed": 208.8871,
+    "peak_ascent_speed": 147.2712,
+    "jerk_rms": 19863.0846,
+    "bottom_pause_s": 0.3,
+    "asymmetry_bottom": 12.8158,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 18,
@@ -527,23 +918,46 @@
    "ascent_s": 1.8,
    "trunk_lean_max_deg": 25.7,
    "predicted_correct": false,
-   "probability_incorrect": 0.908,
+   "probability_incorrect": 0.801,
    "flag_reasons": [
-    {
-     "code": "model_incorrect",
-     "message": "Started straighter than usual",
-     "value": 176.97,
-     "unit": "degrees",
-     "feature": "start_knee_angle"
-    },
     {
      "code": "model_incorrect",
      "message": "Knee travelled further forward than usual",
      "value": 0.44,
      "unit": "shin lengths",
      "feature": "knee_travel_max"
+    },
+    {
+     "code": "model_incorrect",
+     "message": "Went down faster than usual",
+     "value": 200.63,
+     "unit": "deg/s",
+     "feature": "peak_descent_speed"
     }
-   ]
+   ],
+   "features": {
+    "min_knee_angle": 71.7499,
+    "knee_rom": 105.2187,
+    "start_knee_angle": 176.9687,
+    "end_knee_angle": 176.529,
+    "min_hip_angle": 86.7656,
+    "hip_rom": 92.4375,
+    "hip_knee_ratio": 0.8785,
+    "trunk_lean_max": 25.7479,
+    "trunk_lean_bottom": 25.0591,
+    "knee_travel_max": 0.439,
+    "duration_s": 3.6667,
+    "descent_s": 1.8667,
+    "ascent_s": 1.8,
+    "descent_ascent_ratio": 1.0364,
+    "peak_descent_speed": 200.6327,
+    "peak_ascent_speed": 167.1809,
+    "jerk_rms": 18576.8978,
+    "bottom_pause_s": 0.1333,
+    "asymmetry_bottom": 1.8081,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 19,
@@ -558,7 +972,7 @@
    "ascent_s": 1.87,
    "trunk_lean_max_deg": 26.5,
    "predicted_correct": false,
-   "probability_incorrect": 0.978,
+   "probability_incorrect": 0.945,
    "flag_reasons": [
     {
      "code": "model_incorrect",
@@ -569,12 +983,35 @@
     },
     {
      "code": "model_incorrect",
-     "message": "Came up faster than usual",
-     "value": 286.1,
+     "message": "Went down faster than usual",
+     "value": 238.95,
      "unit": "deg/s",
-     "feature": "peak_ascent_speed"
+     "feature": "peak_descent_speed"
     }
-   ]
+   ],
+   "features": {
+    "min_knee_angle": 47.831,
+    "knee_rom": 129.6508,
+    "start_knee_angle": 176.529,
+    "end_knee_angle": 177.4818,
+    "min_hip_angle": 67.6764,
+    "hip_rom": 111.9849,
+    "hip_knee_ratio": 0.8637,
+    "trunk_lean_max": 26.4995,
+    "trunk_lean_bottom": 25.2347,
+    "knee_travel_max": 0.5718,
+    "duration_s": 3.4667,
+    "descent_s": 1.6,
+    "ascent_s": 1.8667,
+    "descent_ascent_ratio": 0.8596,
+    "peak_descent_speed": 238.9496,
+    "peak_ascent_speed": 286.1033,
+    "jerk_rms": 12932.3804,
+    "bottom_pause_s": 0.2333,
+    "asymmetry_bottom": 21.5575,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 20,
@@ -589,14 +1026,14 @@
    "ascent_s": 1.23,
    "trunk_lean_max_deg": 30.5,
    "predicted_correct": false,
-   "probability_incorrect": 0.342,
+   "probability_incorrect": 0.348,
    "flag_reasons": [
     {
      "code": "model_incorrect",
-     "message": "Started straighter than usual",
-     "value": 177.48,
-     "unit": "degrees",
-     "feature": "start_knee_angle"
+     "message": "Went down faster than usual",
+     "value": 217.94,
+     "unit": "deg/s",
+     "feature": "peak_descent_speed"
     },
     {
      "code": "model_incorrect",
@@ -605,7 +1042,30 @@
      "unit": "deg/s",
      "feature": "peak_ascent_speed"
     }
-   ]
+   ],
+   "features": {
+    "min_knee_angle": 71.2457,
+    "knee_rom": 107.7581,
+    "start_knee_angle": 177.4818,
+    "end_knee_angle": 179.0038,
+    "min_hip_angle": 64.9504,
+    "hip_rom": 114.0832,
+    "hip_knee_ratio": 1.0587,
+    "trunk_lean_max": 30.5428,
+    "trunk_lean_bottom": 29.4016,
+    "knee_travel_max": 0.2522,
+    "duration_s": 2.8,
+    "descent_s": 1.5667,
+    "ascent_s": 1.2333,
+    "descent_ascent_ratio": 1.2632,
+    "peak_descent_speed": 217.9432,
+    "peak_ascent_speed": 268.195,
+    "jerk_rms": 18364.1425,
+    "bottom_pause_s": 0.1667,
+    "asymmetry_bottom": 5.7963,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   },
   {
    "index": 21,
@@ -620,7 +1080,7 @@
    "ascent_s": 0.53,
    "trunk_lean_max_deg": 10.3,
    "predicted_correct": false,
-   "probability_incorrect": 0.96,
+   "probability_incorrect": 0.413,
    "flag_reasons": [
     {
      "code": "model_incorrect",
@@ -631,10 +1091,10 @@
     },
     {
      "code": "model_incorrect",
-     "message": "Started straighter than usual",
-     "value": 179.0,
-     "unit": "degrees",
-     "feature": "start_knee_angle"
+     "message": "Shorter pause at the bottom",
+     "value": 0.17,
+     "unit": "s",
+     "feature": "bottom_pause_s"
     },
     {
      "code": "shallow_depth",
@@ -642,7 +1102,30 @@
      "unit": "degrees",
      "message": "Did not reach the target depth (150\u00b0 vs target 100\u00b0)"
     }
-   ]
+   ],
+   "features": {
+    "min_knee_angle": 150.0749,
+    "knee_rom": 28.929,
+    "start_knee_angle": 179.0038,
+    "end_knee_angle": 175.6259,
+    "min_hip_angle": 157.7971,
+    "hip_rom": 20.703,
+    "hip_knee_ratio": 0.7157,
+    "trunk_lean_max": 10.2652,
+    "trunk_lean_bottom": 5.472,
+    "knee_travel_max": 0.3781,
+    "duration_s": 2.3667,
+    "descent_s": 1.8333,
+    "ascent_s": 0.5333,
+    "descent_ascent_ratio": 3.2941,
+    "peak_descent_speed": 126.7667,
+    "peak_ascent_speed": 80.1668,
+    "jerk_rms": 7639.1461,
+    "bottom_pause_s": 0.1667,
+    "asymmetry_bottom": 13.3973,
+    "tracked_fraction": 1.0,
+    "visibility": 0.9937
+   }
   }
  ],
  "flag": {
@@ -4376,9 +4859,10 @@
  "annotated_video_url": "/api/sessions/demo-s-001/annotated-video",
  "model": {
   "pose_model": "mediapipe_pose_landmarker_full",
-  "classifier": "squat_xgb_v1",
-  "threshold": 0.24
+  "classifier": "squat_xgb_v2",
+  "threshold": 0.17,
+  "baseline_reps": 4
  },
  "processing_s": 43.09,
- "_fixture_note": "Real output of model.analyze.analyze_video on REHAB24-6 video PM_038, camera 18 (public sample data, CC BY-NC 4.0, Cernek et al., SISAP 2024). Use for UI/backend development only."
+ "_fixture_note": "Real output of model.analyze.analyze_video on REHAB24-6 video PM_038, camera 18 (public sample data, CC BY-NC 4.0, Cernek et al., SISAP 2024). Use for UI/backend development only. Classifier compared against a 4-rep baseline (the video's first 4 reps)."
 }
