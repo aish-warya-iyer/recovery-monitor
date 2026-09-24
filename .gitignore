@@ -1,1 +1,22 @@
+# dependencies and build output
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+
+# local data: videos, datasets, model outputs never go in git
+data/
+*.mp4
+*.mov
+*.webm
+*.npz
+*.npy
+*.zip
+recovery-monitor-backend/uploads/
+
+# secrets and editor/tool state
+.env
+.env.*
+.DS_Store
 .rocketride/

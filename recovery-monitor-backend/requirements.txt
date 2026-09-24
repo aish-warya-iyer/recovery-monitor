@@ -1,5 +1,6 @@
-fastapi
+# Backend (Python 3.12). The model pipeline's own deps are in ../model/requirements.txt.
+-r ../model/requirements.txt
+fastapi==0.141.1
 uvicorn[standard]
 python-multipart
-mediapipe==0.10.21
-opencv-python-headless
+httpx

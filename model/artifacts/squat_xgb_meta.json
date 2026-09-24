@@ -1,0 +1,27 @@
+{
+ "threshold": 0.17,
+ "features": [
+  "min_knee_angle_rel",
+  "knee_rom_rel",
+  "start_knee_angle_rel",
+  "end_knee_angle_rel",
+  "min_hip_angle_rel",
+  "hip_rom_rel",
+  "hip_knee_ratio_rel",
+  "trunk_lean_max_rel",
+  "trunk_lean_bottom_rel",
+  "knee_travel_max_rel",
+  "duration_s_rel",
+  "descent_s_rel",
+  "ascent_s_rel",
+  "descent_ascent_ratio_rel",
+  "peak_descent_speed_rel",
+  "peak_ascent_speed_rel",
+  "jerk_rms_rel",
+  "bottom_pause_s_rel",
+  "asymmetry_bottom_rel"
+ ],
+ "version": "squat_xgb_v2",
+ "calibration": "baseline",
+ "min_baseline_reps": 3
+}
