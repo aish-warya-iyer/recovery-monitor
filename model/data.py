@@ -28,6 +28,16 @@ def gt_reps(video_id: str) -> list[dict]:
     ]
 
 
+_CAM18_VIEW = {"front": "side", "side": "front", "half-profile": "half-profile", "profile": "front"}
+
+
+def rep_view(camera: str, orientation17: str) -> str:
+    """Camera view of one rep. Orientation is annotated per rep relative to camera 17; camera 18 is
+    orthogonal. Note a single video contains reps facing different directions."""
+    o = orientation17 if camera == "c17" else _CAM18_VIEW[orientation17]
+    return {"profile": "side", "half-profile": "half_profile"}.get(o, o)
+
+
 def load_landmarks(row: dict, variant: str = "full") -> dict:
     return dict(np.load(LANDMARKS / variant / row["exercise"] / f"{row['video_id']}-{row['camera']}.npz"))
 

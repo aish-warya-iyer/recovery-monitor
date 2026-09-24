@@ -17,7 +17,7 @@ import xgboost as xgb
 from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score, roc_auc_score
 
 from model.config import ARTIFACTS, RESULTS
-from model.data import gt_reps, load_series, manifest
+from model.data import gt_reps, load_series, manifest, rep_view
 from model.eval_reps import match
 from model.features import RELATIVE_FEATURES, add_relative, rep_features, segment_reps
 
@@ -37,7 +37,7 @@ def build_dataset(exercise="squat") -> pd.DataFrame:
         gt = gt_reps(row["video_id"])
         for i, j, v in match(det, gt):
             f = feats[i]
-            f.update(video=row["video_id"], camera=row["camera"], view=row["orientation"],
+            f.update(video=row["video_id"], camera=row["camera"], view=rep_view(row["camera"], gt[j]["orientation17"]),
                      subject=gt[j]["subject"], gt_rep=gt[j]["rep"], iou=v, incorrect=1 - gt[j]["correct"])
             rows.append(f)
     return pd.DataFrame(rows)
@@ -107,7 +107,6 @@ def main():
         per_subject[int(s)] = {"reps": int(m.sum()), "incorrect": int(y[m].sum()),
                                "recall_incorrect": round(recall_score(y[m], pred[m], zero_division=0), 3) if y[m].sum() else None,
                                "false_alarms": int(((pred == 1) & (y == 0) & m).sum())}
-    side = (df["view"] == "side").to_numpy()
 
     final = xgb.XGBClassifier(**XGB_PARAMS).fit(df[RELATIVE_FEATURES], df["incorrect"])
     ARTIFACTS.mkdir(exist_ok=True)
@@ -121,7 +120,8 @@ def main():
         "evaluation": "leave-one-subject-out (9 folds); threshold picked on out-of-fold predictions",
         "threshold": round(threshold, 2), "target_recall": TARGET_RECALL,
         "xgboost": metrics(y, pred, oof_prob),
-        "xgboost_side_view_only": metrics(y[side], pred[side], oof_prob[side]),
+        "xgboost_by_view": {v: metrics(y[m], pred[m], oof_prob[m]) | {"reps": int(m.sum())}
+                            for v in ("side", "half_profile", "front") if (m := (df["view"] == v).to_numpy()).any()},
         "xgboost_at_0.5": metrics(y, (oof_prob >= 0.5).astype(int), oof_prob),
         "rules_baseline": metrics(y, oof_rules) | {"rules_learned_per_fold": sorted(set(rule_desc))},
         "per_subject": per_subject,
@@ -134,7 +134,9 @@ def main():
     meta = {"threshold": results["threshold"], "features": RELATIVE_FEATURES, "version": "squat_xgb_v1",
             "min_reps": 3}
     (ARTIFACTS / "squat_xgb_meta.json").write_text(json.dumps(meta, indent=1))
-    for k in ("xgboost", "xgboost_side_view_only", "xgboost_at_0.5", "rules_baseline"):
+    for v, r in results["xgboost_by_view"].items():
+        print("  view", v, {m: r[m] for m in ("reps", "precision_incorrect", "recall_incorrect", "f1_incorrect", "roc_auc") if m in r})
+    for k in ("xgboost", "xgboost_at_0.5", "rules_baseline"):
         print(k, {m: v for m, v in results[k].items() if m != "rules_learned_per_fold"})
     print("threshold", results["threshold"], "| top features", imp[:5])
 

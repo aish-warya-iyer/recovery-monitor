@@ -12,7 +12,7 @@
    "exact_count_rate": 0.111,
    "mean_abs_count_error": 2.61
   },
-  "front": {
+  "camera_c17": {
    "videos": 9,
    "gt_reps": 195,
    "detected_reps": 168,
@@ -21,7 +21,7 @@
    "exact_count_rate": 0.111,
    "mean_abs_count_error": 3.89
   },
-  "side": {
+  "camera_c18": {
    "videos": 9,
    "gt_reps": 195,
    "detected_reps": 205,
@@ -31,10 +31,23 @@
    "mean_abs_count_error": 1.33
   }
  },
+ "recall_by_view": {
+  "front": {
+   "gt_reps": 98,
+   "recall": 0.612
+  },
+  "half_profile": {
+   "gt_reps": 194,
+   "recall": 0.959
+  },
+  "side": {
+   "gt_reps": 98,
+   "recall": 0.969
+  }
+ },
  "videos": [
   {
    "video": "PM_008-c17",
-   "view": "front",
    "lights_on": 0,
    "side": "right",
    "gt_reps": 27,
@@ -47,7 +60,6 @@
   },
   {
    "video": "PM_008-c18",
-   "view": "side",
    "lights_on": 0,
    "side": "left",
    "gt_reps": 27,
@@ -60,7 +72,6 @@
   },
   {
    "video": "PM_022-c17",
-   "view": "front",
    "lights_on": 0,
    "side": "right",
    "gt_reps": 22,
@@ -73,7 +84,6 @@
   },
   {
    "video": "PM_022-c18",
-   "view": "side",
    "lights_on": 0,
    "side": "left",
    "gt_reps": 22,
@@ -86,7 +96,6 @@
   },
   {
    "video": "PM_029-c17",
-   "view": "front",
    "lights_on": 1,
    "side": "right",
    "gt_reps": 20,
@@ -99,7 +108,6 @@
   },
   {
    "video": "PM_029-c18",
-   "view": "side",
    "lights_on": 1,
    "side": "left",
    "gt_reps": 20,
@@ -112,7 +120,6 @@
   },
   {
    "video": "PM_038-c17",
-   "view": "front",
    "lights_on": 1,
    "side": "right",
    "gt_reps": 20,
@@ -125,7 +132,6 @@
   },
   {
    "video": "PM_038-c18",
-   "view": "side",
    "lights_on": 1,
    "side": "left",
    "gt_reps": 20,
@@ -138,7 +144,6 @@
   },
   {
    "video": "PM_043-c17",
-   "view": "front",
    "lights_on": 1,
    "side": "right",
    "gt_reps": 20,
@@ -151,7 +156,6 @@
   },
   {
    "video": "PM_043-c18",
-   "view": "side",
    "lights_on": 1,
    "side": "left",
    "gt_reps": 20,
@@ -164,7 +168,6 @@
   },
   {
    "video": "PM_105-c17",
-   "view": "front",
    "lights_on": 1,
    "side": "right",
    "gt_reps": 21,
@@ -177,7 +180,6 @@
   },
   {
    "video": "PM_105-c18",
-   "view": "side",
    "lights_on": 1,
    "side": "left",
    "gt_reps": 21,
@@ -190,7 +192,6 @@
   },
   {
    "video": "PM_113-c17",
-   "view": "front",
    "lights_on": 1,
    "side": "right",
    "gt_reps": 22,
@@ -203,7 +204,6 @@
   },
   {
    "video": "PM_113-c18",
-   "view": "side",
    "lights_on": 1,
    "side": "left",
    "gt_reps": 22,
@@ -216,7 +216,6 @@
   },
   {
    "video": "PM_118-c17",
-   "view": "front",
    "lights_on": 1,
    "side": "right",
    "gt_reps": 23,
@@ -229,7 +228,6 @@
   },
   {
    "video": "PM_118-c18",
-   "view": "side",
    "lights_on": 1,
    "side": "left",
    "gt_reps": 23,
@@ -242,7 +240,6 @@
   },
   {
    "video": "PM_126-c17",
-   "view": "front",
    "lights_on": 1,
    "side": "right",
    "gt_reps": 20,
@@ -255,7 +252,6 @@
   },
   {
    "video": "PM_126-c18",
-   "view": "side",
    "lights_on": 1,
    "side": "left",
    "gt_reps": 20,

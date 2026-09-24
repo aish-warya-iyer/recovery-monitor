@@ -24,22 +24,61 @@
   ],
   "roc_auc": 0.796
  },
- "xgboost_side_view_only": {
-  "precision_incorrect": 0.454,
-  "recall_incorrect": 0.733,
-  "f1_incorrect": 0.561,
-  "accuracy": 0.635,
-  "confusion_matrix [[TN,FP],[FN,TP]]": [
-   [
-    76,
-    53
+ "xgboost_by_view": {
+  "side": {
+   "precision_incorrect": 0.385,
+   "recall_incorrect": 0.8,
+   "f1_incorrect": 0.519,
+   "accuracy": 0.611,
+   "confusion_matrix [[TN,FP],[FN,TP]]": [
+    [
+     38,
+     32
+    ],
+    [
+     5,
+     20
+    ]
    ],
-   [
-    16,
-    44
-   ]
-  ],
-  "roc_auc": 0.737
+   "roc_auc": 0.724,
+   "reps": 95
+  },
+  "half_profile": {
+   "precision_incorrect": 0.587,
+   "recall_incorrect": 0.771,
+   "f1_incorrect": 0.667,
+   "accuracy": 0.71,
+   "confusion_matrix [[TN,FP],[FN,TP]]": [
+    [
+     78,
+     38
+    ],
+    [
+     16,
+     54
+    ]
+   ],
+   "roc_auc": 0.784,
+   "reps": 186
+  },
+  "front": {
+   "precision_incorrect": 0.6,
+   "recall_incorrect": 0.9,
+   "f1_incorrect": 0.72,
+   "accuracy": 0.767,
+   "confusion_matrix [[TN,FP],[FN,TP]]": [
+    [
+     28,
+     12
+    ],
+    [
+     2,
+     18
+    ]
+   ],
+   "roc_auc": 0.915,
+   "reps": 60
+  }
  },
  "xgboost_at_0.5": {
   "precision_incorrect": 0.613,

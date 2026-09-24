@@ -3,8 +3,9 @@
     python -m model.eval_reps --exercise squat
 
 Ground truth marks every *annotated* repetition. A detected rep is matched to the ground-truth
-rep it overlaps most (temporal IoU >= 0.3). Reported per video and camera view, overall:
-count error, exact-count rate, precision/recall of rep detection, boundary error in frames.
+rep it overlaps most (temporal IoU >= 0.3). Reported overall and per camera: count error,
+exact-count rate, precision/recall, boundary error in frames. Recall is also broken down by the
+camera view of each ground-truth rep (views change within a video, so this is per rep).
 """
 
 import argparse
@@ -14,7 +15,7 @@ from collections import defaultdict
 import numpy as np
 
 from model.config import RESULTS
-from model.data import gt_reps, load_series, manifest
+from model.data import gt_reps, load_series, manifest, rep_view
 from model.features import segment_reps
 
 IOU_MATCH = 0.3
@@ -47,6 +48,7 @@ def main():
     args = ap.parse_args()
 
     rows, by_view = [], defaultdict(lambda: defaultdict(float))
+    view_recall = defaultdict(lambda: [0, 0])  # view -> [matched gt reps, gt reps]
     for row in manifest(args.exercise):
         s = load_series(row, args.variant)
         det = segment_reps(s.knee, s.fps)
@@ -54,14 +56,19 @@ def main():
         m = match(det, gt)
         bound = [abs(det[i].start - gt[j]["start"]) + abs(det[i].end - gt[j]["end"]) for i, j, _ in m]
         r = {
-            "video": f"{row['video_id']}-{row['camera']}", "view": row["orientation"], "lights_on": int(row["lights_on"]),
+            "video": f"{row['video_id']}-{row['camera']}", "lights_on": int(row["lights_on"]),
             "side": s.side, "gt_reps": len(gt), "detected": len(det), "matched": len(m),
             "count_error": len(det) - len(gt),
             "precision": len(m) / len(det) if det else None, "recall": len(m) / len(gt) if gt else None,
             "mean_boundary_error_frames": float(np.mean(bound)) / 2 if bound else None,
         }
         rows.append(r)
-        for key in ("all", row["orientation"]):
+        hit = {j for _, j, _ in m}
+        for j, g in enumerate(gt):
+            v = view_recall[rep_view(row["camera"], g["orientation17"])]
+            v[0] += j in hit
+            v[1] += 1
+        for key in ("all", "camera_" + row["camera"]):
             v = by_view[key]
             v["videos"] += 1
             v["gt"] += len(gt)
@@ -69,7 +76,7 @@ def main():
             v["matched"] += len(m)
             v["exact"] += r["count_error"] == 0
             v["abs_count_error"] += abs(r["count_error"])
-        print(f"{r['video']:12} {r['view']:13} gt={len(gt):2} det={len(det):2} matched={len(m):2} "
+        print(f"{r['video']:12} gt={len(gt):2} det={len(det):2} matched={len(m):2} "
               f"boundary={r['mean_boundary_error_frames'] or 0:.1f}f side={s.side}")
 
     summary = {}
@@ -83,11 +90,13 @@ def main():
             "exact_count_rate": round(v["exact"] / v["videos"], 3),
             "mean_abs_count_error": round(v["abs_count_error"] / v["videos"], 2),
         }
+    recall_by_view = {v: {"gt_reps": n, "recall": round(h / n, 3)} for v, (h, n) in sorted(view_recall.items())}
     out = {"exercise": args.exercise, "pose_model": args.variant, "match_rule": f"temporal IoU >= {IOU_MATCH}",
-           "summary": summary, "videos": rows}
+           "summary": summary, "recall_by_view": recall_by_view, "videos": rows}
     RESULTS.mkdir(exist_ok=True)
     (RESULTS / f"rep_counting_{args.exercise}.json").write_text(json.dumps(out, indent=1))
     print(json.dumps(summary, indent=1))
+    print("recall by view:", json.dumps(recall_by_view))
 
 
 if __name__ == "__main__":

@@ -26,16 +26,17 @@ python3 -m venv ~/rm-venv && ~/rm-venv/bin/pip install -r model/requirements.txt
 Landmark extraction: ~38 frames/s per CPU worker on the Nano (faster than real time); all 18 squat
 videos (9 recordings × 2 cameras) in 213 s with 9 workers.
 
-**Rep counting** (390 annotated reps):
+**Rep counting** (390 annotated reps; recall by the camera view of each rep; views change within a video):
 
-| view | precision | recall |
+| rep view | reps | recall |
 |---|---|---|
-| side | 0.92 | 0.97 |
-| front | 0.91 | 0.78 |
+| side | 98 | 0.97 |
+| half-profile (≈45°) | 194 | 0.96 |
+| front | 98 | 0.61 |
 
-The side view is much better, which is why the quality gate asks patients to film from the side.
-Caveat: the minimum-depth and edge-rep settings were chosen while looking at this data, so these
-numbers are slightly optimistic.
+Precision (detected reps that match a labelled rep): 0.91 on camera 17, 0.92 on camera 18. Some
+"false" detections are probably real reps the dataset didn't annotate. Caveat: the minimum-depth and
+edge-rep settings were chosen while looking at this data, so these numbers are slightly optimistic.
 
 **Rep correctness** (341 detected reps, 115 incorrect, leave-one-subject-out):
 
@@ -48,6 +49,11 @@ Each subject was coached to make *different* mistakes, so absolute features tran
 people (AUC 0.67). Comparing each rep with the same person's typical rep in the session lifts AUC to
 0.80. This needs ≥ 3 reps in a session; below that the app falls back to rules. The feature set was
 chosen after comparing three variants on the same folds, so treat 0.80 as slightly optimistic.
+
+By view (same folds): side AUC 0.72 · half-profile AUC 0.78 · front AUC 0.92 (only 60 reps).
+Counting needs a side-ish view; some mistakes (knees caving in) show best from the front.
+**Recommended camera position: ~45° half-profile**, the best compromise, and what the quality gate
+asks for.
 
 These are movement-evidence numbers from healthy volunteers acting out mistakes, not clinical validation.
 The threshold favours catching bad reps (80% recall); the physio review absorbs the false alarms.
