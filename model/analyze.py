@@ -275,12 +275,18 @@ def analyze_landmarks(lm: dict, exercise: str = "squat", protocol: dict | None =
 
 
 def analyze_video(path: str, exercise: str = "squat", protocol: dict | None = None,
-                  annotated_path: str | None = None) -> dict:
-    """Pose → reps → features → rules + classifier → AnalysisResult. Optionally renders an annotated MP4."""
-    lm = pose_video(str(path), str(POSE_MODELS / f"pose_landmarker_{POSE_VARIANT}.task"))
+                  annotated_path: str | None = None, progress=None) -> dict:
+    """Pose → reps → features → rules + classifier → AnalysisResult. Optionally renders an annotated MP4.
+
+    progress: optional callable(stage, fraction) with stage in {"pose", "analyze", "render"}."""
+    report = progress or (lambda stage, fraction: None)
+    lm = pose_video(str(path), str(POSE_MODELS / f"pose_landmarker_{POSE_VARIANT}.task"),
+                    progress=lambda f: report("pose", f))
+    report("analyze", 0.0)
     result = analyze_landmarks(lm, exercise, protocol)
     result["processing_s"] = round(float(lm["seconds"]), 2)
     if annotated_path:
+        report("render", 0.0)
         render_annotated(str(path), lm, result, annotated_path)
         result["annotated_video_path"] = str(annotated_path)
     return result

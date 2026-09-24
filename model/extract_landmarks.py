@@ -21,8 +21,10 @@ from model.config import LANDMARKS, MANIFEST, POSE_MODELS
 N_LANDMARKS = 33
 
 
-def pose_video(video_path: str, model_path: str, max_frames: int | None = None) -> dict:
-    """Pose landmarks for every frame of one video. Shared with the live analysis path."""
+def pose_video(video_path: str, model_path: str, max_frames: int | None = None, progress=None) -> dict:
+    """Pose landmarks for every frame of one video. Shared with the live analysis path.
+
+    progress: optional callable(fraction_done) called about every half second of video."""
     import cv2
     import mediapipe as mp
     from mediapipe.tasks import python as mp_python
@@ -62,6 +64,8 @@ def pose_video(video_path: str, model_path: str, max_frames: int | None = None) 
                 image[i] = [(p.x, p.y, p.z, p.visibility) for p in res.pose_landmarks[0]]
                 world[i] = [(p.x, p.y, p.z) for p in res.pose_world_landmarks[0]]
             i += 1
+            if progress and n and i % 15 == 0:
+                progress(min(i / n, 1.0))
     cap.release()
     return {"image": image[:i], "world": world[:i], "brightness": brightness[:i], "fps": fps,
             "width": width, "height": height, "seconds": time.perf_counter() - t0}
