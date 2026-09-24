@@ -1,0 +1,802 @@
+{
+ "arm_abduction": {
+  "method": "leave-one-subject-out",
+  "subjects": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ],
+  "folds": [
+   {
+    "test_subject": 1,
+    "train_subjects": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 2,
+    "train_subjects": [
+     1,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 3,
+    "train_subjects": [
+     1,
+     2,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 4,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 5,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 6,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 7,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 8,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     9
+    ]
+   },
+   {
+    "test_subject": 9,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8
+    ]
+   }
+  ]
+ },
+ "arm_vw": {
+  "method": "leave-one-subject-out",
+  "subjects": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ],
+  "folds": [
+   {
+    "test_subject": 1,
+    "train_subjects": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 2,
+    "train_subjects": [
+     1,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 3,
+    "train_subjects": [
+     1,
+     2,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 4,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 5,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 6,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 7,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 8,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     9
+    ]
+   },
+   {
+    "test_subject": 9,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8
+    ]
+   }
+  ]
+ },
+ "push_ups": {
+  "method": "leave-one-subject-out",
+  "subjects": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10
+  ],
+  "folds": [
+   {
+    "test_subject": 1,
+    "train_subjects": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ]
+   },
+   {
+    "test_subject": 2,
+    "train_subjects": [
+     1,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ]
+   },
+   {
+    "test_subject": 3,
+    "train_subjects": [
+     1,
+     2,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ]
+   },
+   {
+    "test_subject": 4,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ]
+   },
+   {
+    "test_subject": 5,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     6,
+     7,
+     8,
+     9,
+     10
+    ]
+   },
+   {
+    "test_subject": 6,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     7,
+     8,
+     9,
+     10
+    ]
+   },
+   {
+    "test_subject": 7,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     8,
+     9,
+     10
+    ]
+   },
+   {
+    "test_subject": 8,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     9,
+     10
+    ]
+   },
+   {
+    "test_subject": 9,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     10
+    ]
+   },
+   {
+    "test_subject": 10,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   }
+  ]
+ },
+ "leg_abduction": {
+  "method": "leave-one-subject-out",
+  "subjects": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ],
+  "folds": [
+   {
+    "test_subject": 1,
+    "train_subjects": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 2,
+    "train_subjects": [
+     1,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 3,
+    "train_subjects": [
+     1,
+     2,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 4,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 5,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 6,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 7,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 8,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     9
+    ]
+   },
+   {
+    "test_subject": 9,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8
+    ]
+   }
+  ]
+ },
+ "leg_lunge": {
+  "method": "leave-one-subject-out",
+  "subjects": [
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ],
+  "folds": [
+   {
+    "test_subject": 2,
+    "train_subjects": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 3,
+    "train_subjects": [
+     2,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 4,
+    "train_subjects": [
+     2,
+     3,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 5,
+    "train_subjects": [
+     2,
+     3,
+     4,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 6,
+    "train_subjects": [
+     2,
+     3,
+     4,
+     5,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 7,
+    "train_subjects": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 8,
+    "train_subjects": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     9
+    ]
+   },
+   {
+    "test_subject": 9,
+    "train_subjects": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8
+    ]
+   }
+  ]
+ },
+ "squat": {
+  "method": "leave-one-subject-out",
+  "subjects": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ],
+  "folds": [
+   {
+    "test_subject": 1,
+    "train_subjects": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 2,
+    "train_subjects": [
+     1,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 3,
+    "train_subjects": [
+     1,
+     2,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 4,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 5,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 6,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 7,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     8,
+     9
+    ]
+   },
+   {
+    "test_subject": 8,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     9
+    ]
+   },
+   {
+    "test_subject": 9,
+    "train_subjects": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8
+    ]
+   }
+  ]
+ }
+}
