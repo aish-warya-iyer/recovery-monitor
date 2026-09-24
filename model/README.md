@@ -16,7 +16,7 @@ python3 -m venv ~/rm-venv && ~/rm-venv/bin/pip install -r model/requirements.txt
 
 | file | what |
 |---|---|
-| `features.py` | angles in pixel space, gap filling + Savitzky–Golay smoothing, rep segmentation, per-rep and session-relative features |
+| `features.py` | angles in pixel space, gap filling + Savitzky–Golay smoothing, rep segmentation, per-rep and baseline-relative features |
 | `eval_reps.py` | detected vs ground-truth reps (temporal IoU ≥ 0.3) → `results/rep_counting_squat.json` |
 | `eval_angles.py` | knee angle vs 3D motion capture, per frame and per-rep depth → `results/angle_accuracy_squat.json` |
 | `train_classifier.py` | XGBoost + rules baseline, 9-fold leave-one-subject-out → `results/classifier_squat.json`, `artifacts/squat_xgb.json` |
@@ -52,19 +52,27 @@ Precision (detected reps that match a labelled rep): 0.91 on camera 17, 0.92 on 
 "false" detections are probably real reps the dataset didn't annotate. Caveat: the minimum-depth and
 edge-rep settings were chosen while looking at this data, so these numbers are slightly optimistic.
 
-**Rep correctness** (341 detected reps, 115 incorrect, leave-one-subject-out):
+**Rep correctness** (leave-one-subject-out, 9 folds; 287 detected reps, 115 incorrect, after setting
+aside each recording's first 3 correct reps as that person's baseline):
 
 | | precision (incorrect) | recall (incorrect) | F1 | ROC AUC |
 |---|---|---|---|---|
-| XGBoost, session-relative features, threshold 0.24 | 0.53 | 0.80 | 0.64 | 0.80 |
-| Rules baseline (best single threshold per fold) | 0.38 | 0.70 | 0.49 | — |
+| XGBoost vs the patient's baseline, threshold 0.17 | 0.53 | 0.80 | 0.64 | 0.70 |
+| Rules baseline (best single threshold per fold, same baseline-relative features) | 0.50 | 0.83 | 0.62 | — |
 
-Each subject was coached to make *different* mistakes, so absolute features transfer poorly across
-people (AUC 0.67). Comparing each rep with the same person's typical rep in the session lifts AUC to
-0.80. This needs ≥ 3 reps in a session; below that the app falls back to rules. The feature set was
-chosen after comparing three variants on the same folds, so treat 0.80 as slightly optimistic.
+What made the difference is **calibrating to the patient**: each REHAB24-6 subject was coached to make
+*different* mistakes, so absolute features transfer poorly across people (AUC 0.67). Each rep is
+therefore compared with the same person's physio-approved reps. In the app, the baseline is a session
+the physio approved; a patient's first session is judged by rules until one is approved. Once rules get
+the same calibrated features, XGBoost is only slightly better than one well-chosen threshold (F1 0.64 vs
+0.62); we keep it because it combines several signals and explains each flag.
 
-By view (same folds): side AUC 0.72 · half-profile AUC 0.78 · front AUC 0.92 (only 60 reps).
+We also tried comparing each rep with the median rep of its own session (AUC 0.80 on these long
+recordings), but it fails on real short sessions where most reps are wrong: the "typical" rep is then
+the wrong one. The calibration reps here come from the same recording, which is easier than a baseline
+from another day.
+
+By view (same folds): side AUC 0.60 (68 reps) · half-profile AUC 0.71 (180) · front AUC 0.77 (39).
 
 **Recommended camera position: side view.** Counting works from side or half-profile (0.97 / 0.96)
 but fails from the front (0.61), and the angle numbers a physio reads are only accurate from the side

@@ -134,7 +134,7 @@ def segment_reps(knee, fps, min_depth_deg=15.0, min_rep_s=0.8, max_rep_s=8.0) ->
     troughs, _ = find_peaks(-k, prominence=min_depth_deg, distance=int(min_rep_s * fps * 0.6))
     peaks, _ = find_peaks(k, prominence=min_depth_deg / 3, distance=int(0.3 * fps))
     reps = []
-    for t in troughs:
+    for t in (int(x) for x in troughs):
         before = peaks[peaks < t]
         after = peaks[peaks > t]
         # no standing peak on one side (first/last rep): take the highest point within half a max-length rep
@@ -203,25 +203,26 @@ def rep_to_dict(rep: Rep, fps: float) -> dict:
     return d
 
 
-# ---------------------------------------------------------------- session-relative features
-# Each rep compared with the same person's typical rep in the session (median), so the model
-# learns "worse than your usual rep" instead of "different from other people".
+# ---------------------------------------------------------------- baseline-relative features
+# Each rep is compared with the SAME patient's physio-approved reps (their baseline), so the model
+# learns "worse than your approved form" instead of "different from other people". Comparing against
+# the current session's own median also works on long recordings but fails when most reps in a short
+# session are wrong (then the typical rep IS the wrong rep), so the baseline must come from an
+# approved session.
 RELATIVE_BASE = [f for f in FEATURES if f not in ("visibility", "tracked_fraction")]
-RELATIVE_FEATURES = [f + suffix for f in RELATIVE_BASE for suffix in ("_rel", "_z")]
-MIN_REPS_FOR_RELATIVE = 3
+RELATIVE_FEATURES = [f + "_rel" for f in RELATIVE_BASE]
+MIN_BASELINE_REPS = 3
 
 
-def add_relative(reps: list[dict]) -> list[dict]:
-    """Adds <feature>_rel (difference from the session median) and <feature>_z (scaled by the session
-    spread) to each rep's feature dict. Needs at least MIN_REPS_FOR_RELATIVE reps."""
-    if len(reps) < MIN_REPS_FOR_RELATIVE:
-        raise ValueError(f"need at least {MIN_REPS_FOR_RELATIVE} reps for session-relative features")
-    out = [dict(r) for r in reps]
-    for f in RELATIVE_BASE:
-        x = np.array([r[f] for r in reps], dtype=np.float64)
-        med = np.nanmedian(x)
-        sd = np.nanstd(x, ddof=1) if np.sum(~np.isnan(x)) > 1 else np.nan
-        for r, v in zip(out, x):
-            r[f + "_rel"] = v - med
-            r[f + "_z"] = (v - med) / (sd + 1e-6) if not np.isnan(sd) else 0.0
+def add_relative(reps: list[dict], baseline: list[dict]) -> list[dict]:
+    """Adds <feature>_rel = value - median of the baseline reps. Needs MIN_BASELINE_REPS baseline reps."""
+    if len(baseline) < MIN_BASELINE_REPS:
+        raise ValueError(f"need at least {MIN_BASELINE_REPS} baseline reps")
+    med = {f: float(np.nanmedian([b[f] for b in baseline])) for f in RELATIVE_BASE}
+    out = []
+    for r in reps:
+        r = dict(r)
+        for f in RELATIVE_BASE:
+            r[f + "_rel"] = r[f] - med[f]
+        out.append(r)
     return out

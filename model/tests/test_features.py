@@ -50,7 +50,14 @@ def test_fill_keeps_long_gaps_nan():
     assert np.isnan(y[45:75]).all()
 
 
-def test_relative_features_need_three_reps():
-    rows = [{"min_knee_angle": v} for v in (90.0, 95.0)]
+def test_relative_features_need_a_baseline():
     with pytest.raises(ValueError):
-        add_relative(rows)
+        add_relative([{}], baseline=[{}, {}])
+
+
+def test_relative_features_subtract_baseline_median():
+    from model.features import RELATIVE_BASE
+
+    base = [{f: v for f in RELATIVE_BASE} for v in (1.0, 2.0, 3.0)]
+    out = add_relative([{f: 10.0 for f in RELATIVE_BASE}], base)
+    assert out[0]["min_knee_angle_rel"] == pytest.approx(8.0)

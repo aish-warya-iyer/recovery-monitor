@@ -1,20 +1,20 @@
 {
  "task": "squat rep correctness (positive = incorrect rep)",
  "dataset": "REHAB24-6 Ex6 squats, CC BY-NC 4.0 (Cernek et al., SISAP 2024)",
- "n_reps": 341,
+ "n_reps": 287,
  "n_incorrect": 115,
  "n_subjects": 9,
  "evaluation": "leave-one-subject-out (9 folds); threshold picked on out-of-fold predictions",
- "threshold": 0.24,
+ "threshold": 0.17,
  "target_recall": 0.8,
  "xgboost": {
   "precision_incorrect": 0.529,
   "recall_incorrect": 0.8,
   "f1_incorrect": 0.637,
-  "accuracy": 0.692,
+  "accuracy": 0.634,
   "confusion_matrix [[TN,FP],[FN,TP]]": [
    [
-    144,
+    90,
     82
    ],
    [
@@ -22,354 +22,256 @@
     92
    ]
   ],
-  "roc_auc": 0.796
+  "roc_auc": 0.699
  },
  "xgboost_by_view": {
   "side": {
-   "precision_incorrect": 0.385,
-   "recall_incorrect": 0.8,
-   "f1_incorrect": 0.519,
-   "accuracy": 0.611,
+   "precision_incorrect": 0.395,
+   "recall_incorrect": 0.6,
+   "f1_incorrect": 0.476,
+   "accuracy": 0.515,
    "confusion_matrix [[TN,FP],[FN,TP]]": [
     [
-     38,
-     32
+     20,
+     23
     ],
     [
-     5,
+     10,
+     15
+    ]
+   ],
+   "roc_auc": 0.602,
+   "reps": 68
+  },
+  "half_profile": {
+   "precision_incorrect": 0.538,
+   "recall_incorrect": 0.814,
+   "f1_incorrect": 0.648,
+   "accuracy": 0.656,
+   "confusion_matrix [[TN,FP],[FN,TP]]": [
+    [
+     61,
+     49
+    ],
+    [
+     13,
+     57
+    ]
+   ],
+   "roc_auc": 0.712,
+   "reps": 180
+  },
+  "front": {
+   "precision_incorrect": 0.667,
+   "recall_incorrect": 1.0,
+   "f1_incorrect": 0.8,
+   "accuracy": 0.744,
+   "confusion_matrix [[TN,FP],[FN,TP]]": [
+    [
+     9,
+     10
+    ],
+    [
+     0,
      20
     ]
    ],
-   "roc_auc": 0.724,
-   "reps": 95
-  },
-  "half_profile": {
-   "precision_incorrect": 0.587,
-   "recall_incorrect": 0.771,
-   "f1_incorrect": 0.667,
-   "accuracy": 0.71,
-   "confusion_matrix [[TN,FP],[FN,TP]]": [
-    [
-     78,
-     38
-    ],
-    [
-     16,
-     54
-    ]
-   ],
-   "roc_auc": 0.784,
-   "reps": 186
-  },
-  "front": {
-   "precision_incorrect": 0.6,
-   "recall_incorrect": 0.9,
-   "f1_incorrect": 0.72,
-   "accuracy": 0.767,
-   "confusion_matrix [[TN,FP],[FN,TP]]": [
-    [
-     28,
-     12
-    ],
-    [
-     2,
-     18
-    ]
-   ],
-   "roc_auc": 0.915,
-   "reps": 60
+   "roc_auc": 0.766,
+   "reps": 39
   }
  },
  "xgboost_at_0.5": {
   "precision_incorrect": 0.613,
-  "recall_incorrect": 0.565,
-  "f1_incorrect": 0.588,
-  "accuracy": 0.733,
+  "recall_incorrect": 0.496,
+  "f1_incorrect": 0.548,
+  "accuracy": 0.672,
   "confusion_matrix [[TN,FP],[FN,TP]]": [
    [
-    185,
-    41
+    136,
+    36
    ],
    [
-    50,
-    65
+    58,
+    57
    ]
   ],
-  "roc_auc": 0.796
+  "roc_auc": 0.699
  },
  "rules_baseline": {
-  "precision_incorrect": 0.375,
-  "recall_incorrect": 0.704,
-  "f1_incorrect": 0.489,
-  "accuracy": 0.504,
+  "precision_incorrect": 0.497,
+  "recall_incorrect": 0.826,
+  "f1_incorrect": 0.621,
+  "accuracy": 0.596,
   "confusion_matrix [[TN,FP],[FN,TP]]": [
    [
-    91,
-    135
+    76,
+    96
    ],
    [
-    34,
-    81
+    20,
+    95
    ]
   ],
   "rules_learned_per_fold": [
-   "descent_s < 2.2",
-   "descent_s < 2.3",
-   "descent_s_z < 0.2",
-   "knee_travel_max > 0.3",
-   "knee_travel_max_z > 0.0"
+   "knee_travel_max > 0.2",
+   "knee_travel_max > 0.3"
   ]
  },
  "per_subject": {
   "1": {
-   "reps": 40,
+   "reps": 34,
    "incorrect": 12,
-   "recall_incorrect": 0.667,
+   "recall_incorrect": 0.75,
    "false_alarms": 10
   },
   "2": {
-   "reps": 39,
+   "reps": 33,
    "incorrect": 2,
    "recall_incorrect": 1.0,
-   "false_alarms": 19
+   "false_alarms": 18
   },
   "3": {
-   "reps": 36,
+   "reps": 30,
    "incorrect": 19,
-   "recall_incorrect": 1.0,
+   "recall_incorrect": 0.947,
    "false_alarms": 3
   },
   "4": {
-   "reps": 40,
+   "reps": 34,
    "incorrect": 6,
    "recall_incorrect": 1.0,
-   "false_alarms": 14
+   "false_alarms": 19
   },
   "5": {
-   "reps": 37,
+   "reps": 31,
    "incorrect": 19,
-   "recall_incorrect": 0.737,
-   "false_alarms": 5
+   "recall_incorrect": 0.842,
+   "false_alarms": 9
   },
   "6": {
-   "reps": 41,
+   "reps": 35,
    "incorrect": 21,
-   "recall_incorrect": 0.667,
-   "false_alarms": 12
+   "recall_incorrect": 0.571,
+   "false_alarms": 4
   },
   "7": {
-   "reps": 33,
+   "reps": 27,
    "incorrect": 18,
-   "recall_incorrect": 0.944,
-   "false_alarms": 0
+   "recall_incorrect": 1.0,
+   "false_alarms": 1
   },
   "8": {
-   "reps": 40,
+   "reps": 34,
    "incorrect": 8,
-   "recall_incorrect": 0.625,
-   "false_alarms": 14
+   "recall_incorrect": 0.375,
+   "false_alarms": 9
   },
   "9": {
-   "reps": 35,
+   "reps": 29,
    "incorrect": 10,
-   "recall_incorrect": 0.7,
-   "false_alarms": 5
+   "recall_incorrect": 0.8,
+   "false_alarms": 9
   }
  },
  "feature_importance": [
   [
-   "peak_ascent_speed_z",
-   0.061
-  ],
-  [
-   "peak_descent_speed_z",
-   0.06
-  ],
-  [
-   "knee_travel_max_z",
-   0.047
-  ],
-  [
-   "duration_s_rel",
-   0.044
-  ],
-  [
-   "start_knee_angle_z",
-   0.042
-  ],
-  [
-   "duration_s_z",
-   0.042
-  ],
-  [
-   "peak_descent_speed_rel",
-   0.041
-  ],
-  [
-   "bottom_pause_s_z",
-   0.035
-  ],
-  [
-   "bottom_pause_s_rel",
-   0.031
-  ],
-  [
-   "knee_rom_z",
-   0.03
-  ],
-  [
-   "start_knee_angle_rel",
-   0.029
+   "descent_s_rel",
+   0.095
   ],
   [
    "knee_travel_max_rel",
-   0.029
-  ],
-  [
-   "descent_s_rel",
-   0.027
-  ],
-  [
-   "trunk_lean_bottom_rel",
-   0.025
-  ],
-  [
-   "jerk_rms_z",
-   0.025
-  ],
-  [
-   "min_hip_angle_rel",
-   0.024
-  ],
-  [
-   "descent_s_z",
-   0.023
-  ],
-  [
-   "hip_rom_rel",
-   0.023
-  ],
-  [
-   "ascent_s_rel",
-   0.022
-  ],
-  [
-   "trunk_lean_max_rel",
-   0.022
-  ],
-  [
-   "asymmetry_bottom_z",
-   0.022
-  ],
-  [
-   "min_hip_angle_z",
-   0.022
-  ],
-  [
-   "end_knee_angle_rel",
-   0.022
-  ],
-  [
-   "hip_rom_z",
-   0.021
-  ],
-  [
-   "trunk_lean_bottom_z",
-   0.02
-  ],
-  [
-   "trunk_lean_max_z",
-   0.02
-  ],
-  [
-   "hip_knee_ratio_rel",
-   0.019
-  ],
-  [
-   "asymmetry_bottom_rel",
-   0.018
-  ],
-  [
-   "min_knee_angle_z",
-   0.017
-  ],
-  [
-   "min_knee_angle_rel",
-   0.017
-  ],
-  [
-   "ascent_s_z",
-   0.017
-  ],
-  [
-   "end_knee_angle_z",
-   0.017
-  ],
-  [
-   "knee_rom_rel",
-   0.017
+   0.08
   ],
   [
    "peak_ascent_speed_rel",
-   0.015
+   0.075
+  ],
+  [
+   "peak_descent_speed_rel",
+   0.072
+  ],
+  [
+   "start_knee_angle_rel",
+   0.068
+  ],
+  [
+   "duration_s_rel",
+   0.067
+  ],
+  [
+   "trunk_lean_max_rel",
+   0.062
+  ],
+  [
+   "hip_knee_ratio_rel",
+   0.051
+  ],
+  [
+   "bottom_pause_s_rel",
+   0.049
   ],
   [
    "descent_ascent_ratio_rel",
-   0.014
+   0.046
+  ],
+  [
+   "asymmetry_bottom_rel",
+   0.044
+  ],
+  [
+   "trunk_lean_bottom_rel",
+   0.044
+  ],
+  [
+   "end_knee_angle_rel",
+   0.044
+  ],
+  [
+   "knee_rom_rel",
+   0.04
+  ],
+  [
+   "min_knee_angle_rel",
+   0.038
+  ],
+  [
+   "min_hip_angle_rel",
+   0.034
+  ],
+  [
+   "hip_rom_rel",
+   0.034
+  ],
+  [
+   "ascent_s_rel",
+   0.033
   ],
   [
    "jerk_rms_rel",
-   0.014
-  ],
-  [
-   "hip_knee_ratio_z",
-   0.013
-  ],
-  [
-   "descent_ascent_ratio_z",
-   0.013
+   0.026
   ]
  ],
  "model_file": "model/artifacts/squat_xgb.json",
  "features": [
   "min_knee_angle_rel",
-  "min_knee_angle_z",
   "knee_rom_rel",
-  "knee_rom_z",
   "start_knee_angle_rel",
-  "start_knee_angle_z",
   "end_knee_angle_rel",
-  "end_knee_angle_z",
   "min_hip_angle_rel",
-  "min_hip_angle_z",
   "hip_rom_rel",
-  "hip_rom_z",
   "hip_knee_ratio_rel",
-  "hip_knee_ratio_z",
   "trunk_lean_max_rel",
-  "trunk_lean_max_z",
   "trunk_lean_bottom_rel",
-  "trunk_lean_bottom_z",
   "knee_travel_max_rel",
-  "knee_travel_max_z",
   "duration_s_rel",
-  "duration_s_z",
   "descent_s_rel",
-  "descent_s_z",
   "ascent_s_rel",
-  "ascent_s_z",
   "descent_ascent_ratio_rel",
-  "descent_ascent_ratio_z",
   "peak_descent_speed_rel",
-  "peak_descent_speed_z",
   "peak_ascent_speed_rel",
-  "peak_ascent_speed_z",
   "jerk_rms_rel",
-  "jerk_rms_z",
   "bottom_pause_s_rel",
-  "bottom_pause_s_z",
-  "asymmetry_bottom_rel",
-  "asymmetry_bottom_z"
+  "asymmetry_bottom_rel"
  ],
- "feature_note": "session-relative: each rep vs the median rep of the same session (needs >= 3 reps)"
+ "feature_note": "baseline-relative: each rep minus the median of the patient's approved baseline reps (here: the recording's first 3 correct reps, excluded from evaluation)"
 }

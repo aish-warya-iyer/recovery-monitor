@@ -6,6 +6,10 @@ Reps are the ones our counter detects (so training matches what the app sees), e
 a REHAB24-6 ground-truth rep (temporal IoU >= 0.3) to get its correct/incorrect label.
 Both camera views are used; a subject's reps are always in the same fold.
 
+Features are relative to the patient's own approved baseline (see features.add_relative). In the app
+the baseline is a physio-approved earlier session; here it is each recording's first 3 correct reps,
+which are then left out of training and evaluation.
+
 Positive class = INCORRECT rep (what we want to catch and send to the physio).
 """
 
@@ -19,7 +23,7 @@ from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_
 from model.config import ARTIFACTS, RESULTS
 from model.data import gt_reps, load_series, manifest, rep_view
 from model.eval_reps import match
-from model.features import RELATIVE_FEATURES, add_relative, rep_features, segment_reps
+from model.features import MIN_BASELINE_REPS, RELATIVE_FEATURES, add_relative, rep_features, segment_reps
 
 TARGET_RECALL = 0.80  # catch at least this share of incorrect reps; physio review absorbs false alarms
 XGB_PARAMS = dict(n_estimators=200, max_depth=3, learning_rate=0.05, subsample=0.8, colsample_bytree=0.8,
@@ -31,11 +35,16 @@ def build_dataset(exercise="squat") -> pd.DataFrame:
     for row in manifest(exercise):
         s = load_series(row)
         det = segment_reps(s.knee, s.fps)
-        if len(det) < 3:
-            continue
-        feats = add_relative([rep_features(s, d) for d in det])  # relative to all reps in this session
         gt = gt_reps(row["video_id"])
-        for i, j, v in match(det, gt):
+        pairs = sorted(match(det, gt), key=lambda x: det[x[0]].start)
+        feats = [rep_features(s, d) for d in det]
+        baseline_idx = [i for i, j, _ in pairs if gt[j]["correct"]][:MIN_BASELINE_REPS]
+        if len(baseline_idx) < MIN_BASELINE_REPS:
+            continue
+        feats = add_relative(feats, [feats[i] for i in baseline_idx])
+        for i, j, v in pairs:
+            if i in baseline_idx:
+                continue
             f = feats[i]
             f.update(video=row["video_id"], camera=row["camera"], view=rep_view(row["camera"], gt[j]["orientation17"]),
                      subject=gt[j]["subject"], gt_rep=gt[j]["rep"], iou=v, incorrect=1 - gt[j]["correct"])
@@ -44,12 +53,12 @@ def build_dataset(exercise="squat") -> pd.DataFrame:
 
 
 RULE_FEATURES = ("trunk_lean_max", "min_knee_angle", "knee_travel_max", "hip_knee_ratio", "descent_s",
-                 "trunk_lean_max_z", "min_knee_angle_z", "knee_travel_max_z", "hip_knee_ratio_z", "descent_s_z")
+                 "trunk_lean_max_rel", "min_knee_angle_rel", "knee_travel_max_rel", "hip_knee_ratio_rel", "descent_s_rel")
 
 
 def rules_baseline(train: pd.DataFrame):
     """One-feature thresholds learned on the training fold: best single split by F1 over a few
-    absolute and session-relative features (so the baseline gets the same information)."""
+    absolute and baseline-relative features (so the baseline gets the same information)."""
     best = (0.0, None, None, None)
     for feat in RULE_FEATURES:
         x, y = train[feat].to_numpy(), train["incorrect"].to_numpy()
@@ -80,7 +89,8 @@ def main():
     df = build_dataset()
     df.to_csv(RESULTS / "squat_rep_features.csv", index=False)
     subjects = sorted(df["subject"].unique())
-    print(f"{len(df)} reps ({df['incorrect'].sum()} incorrect) from {len(subjects)} subjects, both cameras")
+    print(f"{len(df)} reps ({df['incorrect'].sum()} incorrect) from {len(subjects)} subjects, both cameras "
+          f"(baseline reps excluded)")
 
     oof_prob = np.zeros(len(df))
     oof_rules = np.zeros(len(df), dtype=int)
@@ -128,11 +138,12 @@ def main():
         "feature_importance": [[f, round(v, 3)] for f, v in imp],
         "model_file": "model/artifacts/squat_xgb.json",
         "features": RELATIVE_FEATURES,
-        "feature_note": "session-relative: each rep vs the median rep of the same session (needs >= 3 reps)",
+        "feature_note": "baseline-relative: each rep minus the median of the patient's approved baseline reps "
+                        "(here: the recording's first 3 correct reps, excluded from evaluation)",
     }
     (RESULTS / "classifier_squat.json").write_text(json.dumps(results, indent=1))
-    meta = {"threshold": results["threshold"], "features": RELATIVE_FEATURES, "version": "squat_xgb_v1",
-            "min_reps": 3}
+    meta = {"threshold": results["threshold"], "features": RELATIVE_FEATURES, "version": "squat_xgb_v2",
+            "calibration": "baseline", "min_baseline_reps": MIN_BASELINE_REPS}
     (ARTIFACTS / "squat_xgb_meta.json").write_text(json.dumps(meta, indent=1))
     for v, r in results["xgboost_by_view"].items():
         print("  view", v, {m: r[m] for m in ("reps", "precision_incorrect", "recall_incorrect", "f1_incorrect", "roc_auc") if m in r})
