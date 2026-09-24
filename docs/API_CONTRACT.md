@@ -7,6 +7,9 @@ Both lanes build against this:
 - **App lane** stores it, serves it, and renders it. Until the real function lands, use
   [`fixtures/analysis_result.json`](../fixtures/analysis_result.json).
 
+A real example produced by the pipeline on public sample data is in
+[`fixtures/analysis_result.json`](../fixtures/analysis_result.json) (added in the `analyze_video()` PR).
+
 Every field the current frontend reads (`repetitions`, `form_score`, `observations`, …) is kept
 unchanged, so existing screens keep working. New fields are additive.
 
@@ -37,6 +40,7 @@ unchanged, so existing screens keep working. New fields are additive.
   "quality": {
     "passed": true,
     "view": "side",                    // "side" | "half_profile" | "front" | "unknown"
+                                       // side is the only view with accurate angles; front -> status "uncertain"
     "checks": [
       { "name": "person_visible", "passed": true, "value": 0.98, "message": null },
       { "name": "legs_visible",   "passed": true, "value": 0.91, "message": null },
@@ -53,6 +57,8 @@ unchanged, so existing screens keep working. New fields are additive.
     "min_knee_angle_deg": 88.1,        // deepest point in the session
     "median_depth_deg": 96.4,          // median of per-rep minimum knee angle
     "reps_reaching_target": 6,
+    "expected_angle_error_deg": 5.3,   // measured error vs motion capture for the detected view
+                                       // (side 5.3, half_profile 25.7, front 41.8); show as "±5°"
     "median_rep_duration_s": 2.9
   },
 
@@ -65,7 +71,8 @@ unchanged, so existing screens keep working. New fields are additive.
       "depth_reached": true,           // min_knee_angle_deg <= protocol.target_depth_deg
       "duration_s": 2.83, "descent_s": 1.4, "ascent_s": 1.43,
       "trunk_lean_max_deg": 31.0,
-      "predicted_correct": true,
+      "predicted_correct": true,       // decided by the classifier when the session has >= 3 reps,
+                                       // by the rules otherwise; rule findings stay in flag_reasons as notes
       "probability_incorrect": 0.12,   // from the classifier; null when rules-only
       "flag_reasons": []               // [{ "code": "shallow_depth", "message": "...", "value": 112.0, "unit": "degrees" }]
     }
@@ -84,7 +91,7 @@ unchanged, so existing screens keep working. New fields are additive.
     "hip": [168.0, 167.5]
   },
 
-  "annotated_video_url": "/api/sessions/s-001/annotated-video",   // null until rendered
+  "annotated_video_url": "/api/sessions/s-001/annotated-video",   // H.264 MP4; null until rendered
 
   "model": {
     "pose_model": "mediapipe_pose_landmarker_full",
