@@ -1,0 +1,336 @@
+{
+ "task": "squat rep correctness (positive = incorrect rep)",
+ "dataset": "REHAB24-6 Ex6 squats, CC BY-NC 4.0 (Cernek et al., SISAP 2024)",
+ "n_reps": 341,
+ "n_incorrect": 115,
+ "n_subjects": 9,
+ "evaluation": "leave-one-subject-out (9 folds); threshold picked on out-of-fold predictions",
+ "threshold": 0.24,
+ "target_recall": 0.8,
+ "xgboost": {
+  "precision_incorrect": 0.529,
+  "recall_incorrect": 0.8,
+  "f1_incorrect": 0.637,
+  "accuracy": 0.692,
+  "confusion_matrix [[TN,FP],[FN,TP]]": [
+   [
+    144,
+    82
+   ],
+   [
+    23,
+    92
+   ]
+  ],
+  "roc_auc": 0.796
+ },
+ "xgboost_side_view_only": {
+  "precision_incorrect": 0.454,
+  "recall_incorrect": 0.733,
+  "f1_incorrect": 0.561,
+  "accuracy": 0.635,
+  "confusion_matrix [[TN,FP],[FN,TP]]": [
+   [
+    76,
+    53
+   ],
+   [
+    16,
+    44
+   ]
+  ],
+  "roc_auc": 0.737
+ },
+ "xgboost_at_0.5": {
+  "precision_incorrect": 0.613,
+  "recall_incorrect": 0.565,
+  "f1_incorrect": 0.588,
+  "accuracy": 0.733,
+  "confusion_matrix [[TN,FP],[FN,TP]]": [
+   [
+    185,
+    41
+   ],
+   [
+    50,
+    65
+   ]
+  ],
+  "roc_auc": 0.796
+ },
+ "rules_baseline": {
+  "precision_incorrect": 0.375,
+  "recall_incorrect": 0.704,
+  "f1_incorrect": 0.489,
+  "accuracy": 0.504,
+  "confusion_matrix [[TN,FP],[FN,TP]]": [
+   [
+    91,
+    135
+   ],
+   [
+    34,
+    81
+   ]
+  ],
+  "rules_learned_per_fold": [
+   "descent_s < 2.2",
+   "descent_s < 2.3",
+   "descent_s_z < 0.2",
+   "knee_travel_max > 0.3",
+   "knee_travel_max_z > 0.0"
+  ]
+ },
+ "per_subject": {
+  "1": {
+   "reps": 40,
+   "incorrect": 12,
+   "recall_incorrect": 0.667,
+   "false_alarms": 10
+  },
+  "2": {
+   "reps": 39,
+   "incorrect": 2,
+   "recall_incorrect": 1.0,
+   "false_alarms": 19
+  },
+  "3": {
+   "reps": 36,
+   "incorrect": 19,
+   "recall_incorrect": 1.0,
+   "false_alarms": 3
+  },
+  "4": {
+   "reps": 40,
+   "incorrect": 6,
+   "recall_incorrect": 1.0,
+   "false_alarms": 14
+  },
+  "5": {
+   "reps": 37,
+   "incorrect": 19,
+   "recall_incorrect": 0.737,
+   "false_alarms": 5
+  },
+  "6": {
+   "reps": 41,
+   "incorrect": 21,
+   "recall_incorrect": 0.667,
+   "false_alarms": 12
+  },
+  "7": {
+   "reps": 33,
+   "incorrect": 18,
+   "recall_incorrect": 0.944,
+   "false_alarms": 0
+  },
+  "8": {
+   "reps": 40,
+   "incorrect": 8,
+   "recall_incorrect": 0.625,
+   "false_alarms": 14
+  },
+  "9": {
+   "reps": 35,
+   "incorrect": 10,
+   "recall_incorrect": 0.7,
+   "false_alarms": 5
+  }
+ },
+ "feature_importance": [
+  [
+   "peak_ascent_speed_z",
+   0.061
+  ],
+  [
+   "peak_descent_speed_z",
+   0.06
+  ],
+  [
+   "knee_travel_max_z",
+   0.047
+  ],
+  [
+   "duration_s_rel",
+   0.044
+  ],
+  [
+   "start_knee_angle_z",
+   0.042
+  ],
+  [
+   "duration_s_z",
+   0.042
+  ],
+  [
+   "peak_descent_speed_rel",
+   0.041
+  ],
+  [
+   "bottom_pause_s_z",
+   0.035
+  ],
+  [
+   "bottom_pause_s_rel",
+   0.031
+  ],
+  [
+   "knee_rom_z",
+   0.03
+  ],
+  [
+   "start_knee_angle_rel",
+   0.029
+  ],
+  [
+   "knee_travel_max_rel",
+   0.029
+  ],
+  [
+   "descent_s_rel",
+   0.027
+  ],
+  [
+   "trunk_lean_bottom_rel",
+   0.025
+  ],
+  [
+   "jerk_rms_z",
+   0.025
+  ],
+  [
+   "min_hip_angle_rel",
+   0.024
+  ],
+  [
+   "descent_s_z",
+   0.023
+  ],
+  [
+   "hip_rom_rel",
+   0.023
+  ],
+  [
+   "ascent_s_rel",
+   0.022
+  ],
+  [
+   "trunk_lean_max_rel",
+   0.022
+  ],
+  [
+   "asymmetry_bottom_z",
+   0.022
+  ],
+  [
+   "min_hip_angle_z",
+   0.022
+  ],
+  [
+   "end_knee_angle_rel",
+   0.022
+  ],
+  [
+   "hip_rom_z",
+   0.021
+  ],
+  [
+   "trunk_lean_bottom_z",
+   0.02
+  ],
+  [
+   "trunk_lean_max_z",
+   0.02
+  ],
+  [
+   "hip_knee_ratio_rel",
+   0.019
+  ],
+  [
+   "asymmetry_bottom_rel",
+   0.018
+  ],
+  [
+   "min_knee_angle_z",
+   0.017
+  ],
+  [
+   "min_knee_angle_rel",
+   0.017
+  ],
+  [
+   "ascent_s_z",
+   0.017
+  ],
+  [
+   "end_knee_angle_z",
+   0.017
+  ],
+  [
+   "knee_rom_rel",
+   0.017
+  ],
+  [
+   "peak_ascent_speed_rel",
+   0.015
+  ],
+  [
+   "descent_ascent_ratio_rel",
+   0.014
+  ],
+  [
+   "jerk_rms_rel",
+   0.014
+  ],
+  [
+   "hip_knee_ratio_z",
+   0.013
+  ],
+  [
+   "descent_ascent_ratio_z",
+   0.013
+  ]
+ ],
+ "model_file": "model/artifacts/squat_xgb.json",
+ "features": [
+  "min_knee_angle_rel",
+  "min_knee_angle_z",
+  "knee_rom_rel",
+  "knee_rom_z",
+  "start_knee_angle_rel",
+  "start_knee_angle_z",
+  "end_knee_angle_rel",
+  "end_knee_angle_z",
+  "min_hip_angle_rel",
+  "min_hip_angle_z",
+  "hip_rom_rel",
+  "hip_rom_z",
+  "hip_knee_ratio_rel",
+  "hip_knee_ratio_z",
+  "trunk_lean_max_rel",
+  "trunk_lean_max_z",
+  "trunk_lean_bottom_rel",
+  "trunk_lean_bottom_z",
+  "knee_travel_max_rel",
+  "knee_travel_max_z",
+  "duration_s_rel",
+  "duration_s_z",
+  "descent_s_rel",
+  "descent_s_z",
+  "ascent_s_rel",
+  "ascent_s_z",
+  "descent_ascent_ratio_rel",
+  "descent_ascent_ratio_z",
+  "peak_descent_speed_rel",
+  "peak_descent_speed_z",
+  "peak_ascent_speed_rel",
+  "peak_ascent_speed_z",
+  "jerk_rms_rel",
+  "jerk_rms_z",
+  "bottom_pause_s_rel",
+  "bottom_pause_s_z",
+  "asymmetry_bottom_rel",
+  "asymmetry_bottom_z"
+ ],
+ "feature_note": "session-relative: each rep vs the median rep of the same session (needs >= 3 reps)"
+}
