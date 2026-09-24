@@ -1,4 +1,4 @@
-import { Camera, CircleStop, Upload } from 'lucide-react';
+import { Camera, CircleStop, Trash2, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api, followSession } from '../api.js';
 import { ErrorNote, Note } from './ui.jsx';
@@ -15,17 +15,39 @@ const STAGES = {
 
 // Record in the browser (camera) or upload a file, then follow the on-device analysis live.
 export default function UploadPanel({ patientId, onDone }) {
-  const [mode, setMode] = useState('idle'); // idle | camera | recording | uploading | processing
+  const [mode, setMode] = useState('idle'); // idle | camera | recording | selected | uploading | processing
   const [progress, setProgress] = useState(null);
   const [error, setError] = useState(null);
   const [countdown, setCountdown] = useState(0);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedUrl, setSelectedUrl] = useState(null);
   const fileInput = useRef(null);
   const preview = useRef(null);
   const stream = useRef(null);
   const recorder = useRef(null);
   const chunks = useRef([]);
 
-  useEffect(() => () => stream.current?.getTracks().forEach((t) => t.stop()), []);
+  useEffect(() => () => {
+    stream.current?.getTracks().forEach((t) => t.stop());
+    if (selectedUrl) URL.revokeObjectURL(selectedUrl);
+  }, [selectedUrl]);
+
+  function selectFile(file) {
+    if (!file) return;
+    if (selectedUrl) URL.revokeObjectURL(selectedUrl);
+    setSelectedFile(file);
+    setSelectedUrl(URL.createObjectURL(file));
+    setError(null);
+    setMode('selected');
+  }
+
+  function discardSelection() {
+    if (selectedUrl) URL.revokeObjectURL(selectedUrl);
+    setSelectedFile(null);
+    setSelectedUrl(null);
+    if (fileInput.current) fileInput.current.value = '';
+    setMode('idle');
+  }
 
   async function submit(file, source) {
     setError(null);
@@ -75,7 +97,7 @@ export default function UploadPanel({ patientId, onDone }) {
         recorder.current.onstop = () => {
           stream.current.getTracks().forEach((t) => t.stop());
           const blob = new Blob(chunks.current, { type: recorder.current.mimeType || 'video/webm' });
-          submit(new File([blob], 'recording.webm', { type: blob.type }), 'camera');
+          selectFile(new File([blob], 'recording.webm', { type: blob.type }));
         };
         recorder.current.start();
         setMode('recording');
@@ -84,6 +106,14 @@ export default function UploadPanel({ patientId, onDone }) {
   }
 
   const busy = mode === 'uploading' || mode === 'processing';
+
+  function submitSelected() {
+    if (!selectedFile) return;
+    const file = selectedFile;
+    const source = file.name === 'recording.webm' ? 'camera' : 'upload';
+    discardSelection();
+    submit(file, source);
+  }
   return (
     <div className="upload-panel">
       {(mode === 'camera' || mode === 'recording') && (
@@ -96,9 +126,20 @@ export default function UploadPanel({ patientId, onDone }) {
               <button className="primary-button" onClick={startRecording}><Camera size={15} /> Start recording</button>
             )}
             {mode === 'recording' && (
-              <button className="danger-button" onClick={() => recorder.current.stop()}><CircleStop size={15} /> Stop and analyse</button>
+              <button className="danger-button" onClick={() => recorder.current.stop()}><CircleStop size={15} /> Stop recording</button>
             )}
           </div>
+        </div>
+      )}
+
+      {mode === 'selected' && (
+        <div className="selected-video">
+          <video src={selectedUrl} controls playsInline preload="metadata" />
+          <div className="selected-video-actions">
+            <button className="primary-button" onClick={submitSelected}><Upload size={15} /> Use this video</button>
+            <button className="secondary-button danger-outline" onClick={discardSelection}><Trash2 size={15} /> Discard video</button>
+          </div>
+          <small>Preview the recording before analysis. You can discard it and choose another video.</small>
         </div>
       )}
 
@@ -110,7 +151,7 @@ export default function UploadPanel({ patientId, onDone }) {
             <button className="primary-button" onClick={openCamera}><Camera size={15} /> Record with camera</button>
             <button className="secondary-button" onClick={() => fileInput.current.click()}><Upload size={15} /> Upload a video</button>
             <input ref={fileInput} type="file" accept="video/*" hidden
-              onChange={(e) => e.target.files[0] && submit(e.target.files[0], 'upload')} />
+              onChange={(e) => selectFile(e.target.files[0])} />
           </div>
         </>
       )}

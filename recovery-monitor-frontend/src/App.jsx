@@ -1,6 +1,8 @@
-import { Activity, BarChart3, ClipboardList, HeartPulse, LockKeyhole, UserRound, Wifi, WifiOff } from 'lucide-react';
+import { Activity, ArrowRight, BarChart3, Check, ClipboardList, HeartPulse, LockKeyhole, ShieldCheck, Sparkles, UserRound, Wifi, WifiOff } from 'lucide-react';
 import { api } from './api.js';
-import { Initials } from './components/ui.jsx';
+import rehabMotionPerson from './assets/rehab-motion-person.png';
+import rehabMotionPersonStanding from './assets/rehab-motion-person-standing.png';
+import exerciseLibraryStrip from './assets/exercise-library-strip.png';
 import { go, useLoad, usePoll, useRoute } from './hooks.js';
 import Evaluation from './pages/Evaluation.jsx';
 import PatientHome from './pages/PatientHome.jsx';
@@ -12,6 +14,7 @@ import Privacy from './pages/Privacy.jsx';
 export default function App() {
   const route = useRoute();
   const [area, a, b] = route;
+  const isLanding = !area;
   const health = usePoll(() => api.health(), 5000);
   const queue = usePoll(() => (area === 'physio' ? api.reviewQueue() : Promise.resolve(null)), 10000, [area]);
 
@@ -32,7 +35,7 @@ export default function App() {
   const h = health.data;
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${isLanding ? 'landing-shell' : ''}`}>
       <aside className="sidebar">
         <button className="brand" onClick={() => go('/')}>
           <span className="brand-mark"><Activity size={18} /></span>
@@ -78,34 +81,101 @@ export default function App() {
 
 function RolePicker() {
   const patients = useLoad(() => api.patients(), []);
+  const demoPatient = patients.data?.[0];
+  const scrollToStory = () => document.getElementById('story')?.scrollIntoView({ behavior: 'smooth' });
+
   return (
-    <div className="page role-picker">
-      <header className="page-heading">
-        <div>
-          <span className="eyebrow">Recovery Monitor</span>
-          <h1>Rehab exercise evidence, measured on this device</h1>
-          <p className="page-subtitle">Patients record their exercises at home. The system measures every rep and flags what
-            a physiotherapist should look at. The physiotherapist decides.</p>
-        </div>
+    <div className="landing-page">
+      <header className="landing-nav">
+        <button className="landing-brand" onClick={() => go('/')} aria-label="Recovery Monitor home">
+          <span className="brand-mark"><Activity size={18} /></span>
+          <span><strong>Recovery Monitor</strong><small>On-device rehab evidence</small></span>
+        </button>
+        <nav className="landing-links" aria-label="About Recovery Monitor">
+          <button onClick={scrollToStory}>How it works</button>
+          <button onClick={() => go('/evaluation')}>Accuracy</button>
+          <button onClick={() => go('/privacy')}>Privacy</button>
+        </nav>
+        <button className="nav-login" onClick={() => go('/physio')}>Sign in <ArrowRight size={15} /></button>
       </header>
-      <div className="role-grid">
-        <div className="role-card">
-          <h2>I'm a patient</h2>
-          <p>Record today's session and see how it went.</p>
-          {patients.data?.map((p) => (
-            <button key={p.id} className="role-person" onClick={() => go(`/patient/${p.id}`)}>
-              <Initials name={p.name} /> <span>{p.name}</span>
-            </button>
-          ))}
-          {patients.error && <p className="muted small">{patients.error.message}</p>}
-        </div>
-        <div className="role-card">
-          <h2>I'm a physiotherapist</h2>
-          <p>Review flagged sessions and set each patient's plan.</p>
-          <button className="primary-button" onClick={() => go('/physio')}><ClipboardList size={15} /> Open review queue</button>
-        </div>
-      </div>
-      <p className="muted small">Demo patients use public sample data (REHAB24-6). Not a medical device.</p>
+
+      <main>
+        <section className="landing-hero">
+          <div className="hero-copy">
+            <span className="eyebrow"><Sparkles size={13} /> Rehabilitation, made visible</span>
+            <h1>The evidence layer <em>between appointments.</em></h1>
+            <p className="hero-subtitle">Recovery Monitor turns everyday exercise into structured movement evidence—helping care teams see what is happening between visits, while keeping patients engaged in the work of recovery.</p>
+            <div className="hero-actions">
+              <button className="primary-button hero-button" onClick={() => go(`/patient/${demoPatient?.id ?? 'jordan'}`)}>Explore the patient experience <ArrowRight size={16} /></button>
+              <button className="secondary-button hero-button" onClick={() => go('/physio')}>See the care-team workflow</button>
+            </div>
+            <p className="landing-note"><ShieldCheck size={15} /> Private by design. Analysis runs on this device.</p>
+          </div>
+          <div className="hero-orbit" aria-hidden="true">
+            <div className="orbit-glow" />
+            <div className="orbit-card orbit-card-main">
+              <div className="orbit-card-top"><span className="mini-status"><span /> Live movement sample</span><span>Today</span></div>
+              <div className="motion-figure-image"><img className="figure-standing" src={rehabMotionPersonStanding} alt="3D rehabilitation motion figure standing" /><img className="figure-squat" src={rehabMotionPerson} alt="3D rehabilitation motion figure in a squat" /></div>
+              <div className="orbit-metric"><strong>04</strong><span>of 10 reps measured</span></div>
+              <div className="orbit-bars"><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></div>
+            </div>
+            <div className="floating-chip chip-confidence"><Check size={14} /> Clear movement</div>
+            <div className="floating-chip chip-local"><span className="pulse-dot" /> Local analysis</div>
+          </div>
+        </section>
+
+        <section className="landing-exercises">
+          <div className="section-intro"><span className="eyebrow">Dataset-backed movement library</span><h2>One platform. More ways to move.</h2><p>The research set spans six movement patterns. Squat is our current full product workflow; this library shows the path toward broader rehabilitation coverage.</p></div>
+          <div className="exercise-strip-frame"><img src={exerciseLibraryStrip} alt="Six 3D rehabilitation exercise poses: arm abduction, arm V/W, push-up, leg abduction, lunge, and squat" /></div>
+          <div className="exercise-labels" aria-label="Exercise coverage">
+            <div><span>01</span><strong>Arm abduction</strong><small>Research coverage</small></div>
+            <div><span>02</span><strong>Arm V/W</strong><small>Research coverage</small></div>
+            <div><span>03</span><strong>Push-up</strong><small>Research coverage</small></div>
+            <div><span>04</span><strong>Leg abduction</strong><small>Research coverage</small></div>
+            <div><span>05</span><strong>Leg lunge</strong><small>Research coverage</small></div>
+            <div className="exercise-live"><span>06</span><strong>Squat</strong><small>Current full workflow</small></div>
+          </div>
+        </section>
+
+        <section className="landing-story" id="story">
+          <div className="section-intro"><span className="eyebrow">The product loop</span><h2>Less guesswork. More useful signal.</h2><p>Recovery Monitor gives each side of the care relationship a clearer next step—without asking the patient to become a data scientist.</p></div>
+          <div className="story-grid">
+            <article><span className="story-number">01</span><h3>Capture the moment</h3><p>A short exercise video becomes a repeatable record of what happened at home.</p></article>
+            <article><span className="story-number">02</span><h3>Translate movement</h3><p>Depth, timing, tracking quality, and change are organized into evidence people can understand.</p></article>
+            <article><span className="story-number">03</span><h3>Extend the visit</h3><p>Therapists spend less time guessing what happened between appointments and more time deciding what to do next.</p></article>
+          </div>
+        </section>
+
+        <section className="landing-proof">
+          <div className="section-intro"><span className="eyebrow">Why this can matter at scale</span><h2>A clearer operating layer for recovery at home.</h2><p>Built around the moments that are usually invisible: the exercise, the signal, and the decision that follows.</p></div>
+          <div className="proof-grid">
+            <article className="proof-card proof-card-featured"><span className="proof-kicker">For care teams</span><h3>Make remote progress reviewable.</h3><p>Bring structured movement evidence into the space between appointments, with flags that invite a professional review rather than replace one.</p><button className="proof-link" onClick={() => go('/physio')}>Open the review workflow <ArrowRight size={15} /></button></article>
+            <article className="proof-card"><span className="proof-kicker">For patients</span><h3>Make effort feel visible.</h3><p>Patients get a calmer feedback loop: record, understand the result, report how they feel, and keep going.</p></article>
+            <article className="proof-card"><span className="proof-kicker">For organizations</span><h3>Privacy is part of the product.</h3><p>On-device inference keeps sensitive movement data close to the people and systems responsible for care.</p></article>
+          </div>
+        </section>
+
+        <section className="landing-roles">
+          <div className="section-intro"><span className="eyebrow">Two perspectives, one recovery</span><h2>Choose your space.</h2></div>
+          <div className="role-grid">
+            <div className="role-card landing-role-card patient-role">
+              <div className="role-icon"><HeartPulse size={19} /></div><h2>For patients</h2><p>A gentle place to record today’s movement, understand the result, and share how your body feels.</p>
+              <button className="text-button" onClick={() => go(`/patient/${demoPatient?.id ?? 'jordan'}`)}>Patient login <ArrowRight size={15} /></button>
+              {patients.error && <span className="muted small">Demo access is temporarily unavailable.</span>}
+            </div>
+            <div className="role-card landing-role-card physio-role">
+              <div className="role-icon"><ClipboardList size={19} /></div><h2>For physiotherapists</h2><p>A focused review queue for the sessions that deserve a closer look, with the final decision always yours.</p>
+              <button className="text-button" onClick={() => go('/physio')}>Physiotherapist login <ArrowRight size={15} /></button>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-trust">
+          <div><ShieldCheck size={23} /><strong>Your movement stays yours.</strong><p>Local inference, transparent measurements, and a clear therapist approval step.</p></div>
+          <button className="secondary-button" onClick={() => go('/privacy')}>Explore privacy <ArrowRight size={15} /></button>
+        </section>
+      </main>
+      <footer className="landing-footer"><span>Recovery Monitor</span><span>Demo experience · Not a medical device</span><span>Public sample data: REHAB24-6</span></footer>
     </div>
   );
 }
