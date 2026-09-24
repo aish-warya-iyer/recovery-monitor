@@ -61,6 +61,13 @@ REASONS = {
 }
 
 
+# Features that describe the same thing to a person; only the strongest of each group is phrased.
+CONCEPT = {"descent_s": "down_speed", "peak_descent_speed": "down_speed", "ascent_s": "up_speed",
+           "peak_ascent_speed": "up_speed", "trunk_lean_max": "lean", "trunk_lean_bottom": "lean",
+           "min_knee_angle": "depth", "knee_rom": "depth", "min_hip_angle": "hip", "hip_rom": "hip"}
+MIN_CHANGE = {"degrees": 5.0, "s": 0.3, "deg/s": 30.0, "shin lengths": 0.08}
+
+
 @lru_cache
 def _classifier():
     import xgboost as xgb
@@ -123,8 +130,10 @@ def _model_scores(feats: list[dict], baseline: list[dict] | None):
 
     model, meta = _classifier()
     rel = add_relative(feats, baseline)
-    # A reason is only worth saying if the change exceeds the patient's normal rep-to-rep spread.
-    spread = {b: float(np.nanstd([x[b] for x in baseline], ddof=1)) for b in REASONS}
+    # A reason is only worth saying if the change exceeds both the patient's normal rep-to-rep spread
+    # and a minimum a person would notice (5 degrees, 0.3 s, ...).
+    spread = {b: max(float(np.nanstd([x[b] for x in baseline], ddof=1)), MIN_CHANGE.get(REASONS[b][1], 0.0))
+              for b in REASONS}
     X = np.array([[r[f] for f in meta["features"]] for r in rel], dtype=np.float32)
     dm = xgb.DMatrix(X, feature_names=meta["features"])
     prob = model.predict(dm)
@@ -135,8 +144,14 @@ def _model_scores(feats: list[dict], baseline: list[dict] | None):
         for f, v in zip(meta["features"], c):
             base = f.removesuffix("_rel")
             by_base[base] = by_base.get(base, 0.0) + float(v)
-        top = [b for b, v in sorted(by_base.items(), key=lambda x: -x[1])
-               if v > 0 and b in REASONS and abs(r[b + "_rel"]) > max(spread[b], 1e-6)][:2]
+        top, seen = [], set()
+        for b, v in sorted(by_base.items(), key=lambda x: -x[1]):
+            concept = CONCEPT.get(b, b)
+            if v > 0 and b in REASONS and concept not in seen and abs(r[b + "_rel"]) > max(spread[b], 1e-6):
+                top.append(b)
+                seen.add(concept)
+            if len(top) == 2:
+                break
         out = []
         for b in top:
             what, unit, more, less = REASONS[b]
