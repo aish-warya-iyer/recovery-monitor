@@ -11,7 +11,7 @@ import cv2
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from fastapi import FastAPI, File, Form, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -81,6 +81,7 @@ app.add_middleware(
 
 
 SESSION_RECORDS: dict[str, SessionRecord] = {}
+PAIN_REVIEW_THRESHOLD = 4
 
 
 MODEL_PATH = Path(__file__).with_name(
@@ -433,6 +434,19 @@ async def save_check_in(
     """Save patient-reported information."""
 
     existing = SESSION_RECORDS.get(session_id)
+    if (
+        payload.decision == "approve"
+        and existing is not None
+        and existing.check_in is not None
+        and existing.check_in.pain_score > PAIN_REVIEW_THRESHOLD
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Pain score is above the review threshold of "
+                f"{PAIN_REVIEW_THRESHOLD}/10. Therapist review is required."
+            ),
+        )
 
     record = SessionRecord(
         session_id=session_id,

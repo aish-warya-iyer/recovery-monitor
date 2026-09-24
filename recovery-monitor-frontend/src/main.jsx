@@ -1,13 +1,5 @@
-import {
-  StrictMode,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-
+import { StrictMode, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-
 import {
   Activity,
   ArrowUpRight,
@@ -35,75 +27,33 @@ import {
   WifiOff,
   X,
 } from 'lucide-react';
-
 import './styles.css';
 
-
 const workflow = [
-  {
-    label: 'Session setup',
-    icon: ClipboardCheck,
-  },
-  {
-    label: 'Movement analysis',
-    icon: Activity,
-  },
-  {
-    label: 'Patient check-in',
-    icon: MessageSquareText,
-  },
-  {
-    label: 'Therapist review',
-    icon: ShieldCheck,
-  },
+  { label: 'Session setup', icon: ClipboardCheck },
+  { label: 'Movement analysis', icon: Activity },
+  { label: 'Patient check-in', icon: MessageSquareText },
+  { label: 'Therapist review', icon: ShieldCheck },
 ];
-
 
 function App() {
   const [activeNav, setActiveNav] = useState('Overview');
-
-  const [analysisState, setAnalysisState] =
-    useState('ready');
-
-  const [analysisResult, setAnalysisResult] =
-    useState(null);
-
-  const [analysisError, setAnalysisError] =
-    useState('');
-
+  const [analysisState, setAnalysisState] = useState('ready');
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [analysisError, setAnalysisError] = useState('');
   const [pain, setPain] = useState(3);
-
-  const [patientComment, setPatientComment] =
-    useState(
-      'My knee feels a little stiff today, but better than last week.'
-    );
-
-  const [checkinState, setCheckinState] =
-    useState('idle');
-
-  const [checkinError, setCheckinError] =
-    useState('');
-
-  const [approved, setApproved] =
-    useState(false);
-
-  const [decisionState, setDecisionState] =
-    useState('idle');
-
-  const [menuOpen, setMenuOpen] =
-    useState(false);
-
-  const [selectedVideo, setSelectedVideo] =
-    useState(null);
-
-  const [videoPreviewUrl, setVideoPreviewUrl] =
-    useState('');
-
+  const [patientComment, setPatientComment] = useState(
+    'My knee feels a little stiff today, but better than last week.'
+  );
+  const [checkinState, setCheckinState] = useState('idle');
+  const [checkinError, setCheckinError] = useState('');
+  const [approved, setApproved] = useState(false);
+  const [decisionState, setDecisionState] = useState('idle');
+  const [decisionError, setDecisionError] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState('');
   const videoInputRef = useRef(null);
-
-  const sessionId = 'demo-session-001';
-  const targetRepetitions = 10;
-
 
   useEffect(() => {
     if (!selectedVideo) {
@@ -111,48 +61,35 @@ function App() {
       return undefined;
     }
 
-    const objectUrl = URL.createObjectURL(
-      selectedVideo
-    );
-
+    const objectUrl = URL.createObjectURL(selectedVideo);
     setVideoPreviewUrl(objectUrl);
 
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
+    return () => URL.revokeObjectURL(objectUrl);
   }, [selectedVideo]);
 
-
   const analysisLabel = useMemo(() => {
-    if (analysisState === 'running') {
-      return 'Analyzing movement...';
-    }
-
-    if (analysisState === 'complete') {
-      return 'Analysis complete';
-    }
-
+    if (analysisState === 'running') return 'Analyzing movement...';
+    if (analysisState === 'complete') return 'Analysis complete';
     return 'Start analysis';
   }, [analysisState]);
 
-
-  const formScore =
-    analysisResult?.form_score ?? 0;
+  const targetRepetitions = 10;
+  const sessionId = 'demo-session-001';
+  const formScore = analysisResult?.form_score ?? 0;
 
   const formLabel = !analysisResult
     ? 'Waiting'
     : analysisResult.status === 'uncertain'
       ? 'Review'
-      : formScore >= 75
+      : formScore >= 70
         ? 'Good'
         : 'Needs review';
 
   const confidenceLabel = analysisResult
-    ? `${Math.round(
-        analysisResult.confidence * 100
-      )}%`
+    ? `${Math.round(analysisResult.confidence * 100)}%`
     : '86%';
 
+  const painReviewRequired = pain > 4;
 
   const startAnalysis = async () => {
     setAnalysisState('running');
@@ -161,26 +98,12 @@ function App() {
     try {
       const body = new FormData();
 
-      body.append(
-        'exercise',
-        'seated_leg_extension'
-      );
-
-      body.append(
-        'session_id',
-        sessionId
-      );
-
-      body.append(
-        'source',
-        selectedVideo ? 'upload' : 'demo'
-      );
+      body.append('exercise', 'seated_leg_extension');
+      body.append('session_id', sessionId);
+      body.append('source', selectedVideo ? 'upload' : 'demo');
 
       if (selectedVideo) {
-        body.append(
-          'video',
-          selectedVideo
-        );
+        body.append('video', selectedVideo);
       }
 
       const response = await fetch(
@@ -192,9 +115,7 @@ function App() {
       );
 
       if (!response.ok) {
-        throw new Error(
-          `Backend returned ${response.status}`
-        );
+        throw new Error(`Backend returned ${response.status}`);
       }
 
       const result = await response.json();
@@ -203,15 +124,12 @@ function App() {
       setAnalysisState('complete');
     } catch (error) {
       setAnalysisState('error');
-
       setAnalysisError(
         'Backend unavailable. Start the local FastAPI server on port 8000.'
       );
-
       console.error(error);
     }
   };
-
 
   const saveCheckIn = async () => {
     setCheckinState('saving');
@@ -234,26 +152,29 @@ function App() {
       );
 
       if (!response.ok) {
-        throw new Error(
-          `Backend returned ${response.status}`
-        );
+        throw new Error(`Backend returned ${response.status}`);
       }
 
       setCheckinState('saved');
     } catch (error) {
       setCheckinState('error');
-
       setCheckinError(
         'Could not save check-in. Make sure the local backend is running.'
       );
-
       console.error(error);
     }
   };
 
-
   const saveDecision = async (decision) => {
+    if (decision === 'approve' && painReviewRequired) {
+      setDecisionError(
+        'Pain is above 4/10. Therapist review is required before approval.'
+      );
+      return;
+    }
+
     setDecisionState('saving');
+    setDecisionError('');
 
     try {
       const response = await fetch(
@@ -274,24 +195,21 @@ function App() {
       );
 
       if (!response.ok) {
-        throw new Error(
-          `Backend returned ${response.status}`
-        );
+        throw new Error(`Backend returned ${response.status}`);
       }
 
       setApproved(decision === 'approve');
       setDecisionState(decision);
     } catch (error) {
       setDecisionState('error');
-
-      setAnalysisError(
-        'Could not save therapist decision. Start the local FastAPI server.'
+      setDecisionError(
+        error instanceof Error
+          ? error.message
+          : 'Could not save therapist decision.'
       );
-
       console.error(error);
     }
   };
-
 
   const chooseVideo = (event) => {
     const file = event.target.files?.[0];
@@ -304,42 +222,31 @@ function App() {
     setAnalysisResult(null);
     setAnalysisState('ready');
     setAnalysisError('');
-    setCheckinState('idle');
-    setDecisionState('idle');
-    setApproved(false);
   };
 
+  const updatePain = (value) => {
+    setPain(value);
+    setCheckinState('idle');
+    setApproved(false);
+    setDecisionState('idle');
+    setDecisionError('');
+  };
 
   return (
     <div className="app-shell">
-      <aside
-        className={`sidebar ${
-          menuOpen ? 'sidebar-open' : ''
-        }`}
-      >
+      <aside className={`sidebar ${menuOpen ? 'sidebar-open' : ''}`}>
         <div className="brand-lockup">
           <div className="brand-mark">
-            <Activity
-              size={21}
-              strokeWidth={2.4}
-            />
+            <Activity size={21} strokeWidth={2.4} />
           </div>
 
           <div>
-            <div className="brand-name">
-              Recovery Monitor
-            </div>
-
-            <div className="brand-product">
-              NanoForge edge health
-            </div>
+            <div className="brand-name">Recovery Monitor</div>
+            <div className="brand-product">NanoForge edge health</div>
           </div>
         </div>
 
-
-        <div className="nav-label">
-          Workspace
-        </div>
+        <div className="nav-label">Workspace</div>
 
         <nav className="nav-list">
           {[
@@ -360,20 +267,14 @@ function App() {
             >
               <Icon size={17} />
               <span>{label}</span>
-
               {label === 'Sessions' && (
-                <span className="nav-count">
-                  4
-                </span>
+                <span className="nav-count">4</span>
               )}
             </button>
           ))}
         </nav>
 
-
-        <div className="nav-label nav-label-lower">
-          System
-        </div>
+        <div className="nav-label nav-label-lower">System</div>
 
         <nav className="nav-list">
           {[
@@ -396,7 +297,6 @@ function App() {
           ))}
         </nav>
 
-
         <div className="sidebar-spacer" />
 
         <div className="runtime-card">
@@ -404,34 +304,19 @@ function App() {
             <span className="status-dot" />
             Local runtime ready
           </div>
-
-          <div className="runtime-device">
-            HP ZGX Nano
-          </div>
-
-          <div className="runtime-meta">
-            Network not required
-          </div>
+          <div className="runtime-device">HP ZGX Nano</div>
+          <div className="runtime-meta">Network not required</div>
         </div>
 
-
         <div className="user-row">
-          <div className="avatar">
-            AI
-          </div>
-
+          <div className="avatar">AI</div>
           <div className="user-copy">
             <strong>Aishwarya Iyer</strong>
             <span>Therapist workspace</span>
           </div>
-
-          <MoreHorizontal
-            size={17}
-            className="muted-icon"
-          />
+          <MoreHorizontal size={17} className="muted-icon" />
         </div>
       </aside>
-
 
       <main className="main-shell">
         <header className="topbar">
@@ -465,28 +350,22 @@ function App() {
           </div>
         </header>
 
-
         <div className="content-wrap">
           <div className="page-heading">
             <div>
               <div className="eyebrow">
                 Wednesday, September 23, 2026
               </div>
-
-              <h1>
-                Good afternoon, Aishwarya
-              </h1>
-
+              <h1>Good afternoon, Aishwarya</h1>
               <p className="page-subtitle">
-                Review today's rehabilitation evidence before approving the next session.
+                Review today&apos;s rehabilitation evidence before approving
+                the next session.
               </p>
             </div>
 
             <button
               className="primary-button"
-              onClick={() =>
-                videoInputRef.current?.click()
-              }
+              onClick={() => videoInputRef.current?.click()}
             >
               <Upload size={16} />
               New session
@@ -500,7 +379,6 @@ function App() {
               onChange={chooseVideo}
             />
           </div>
-
 
           <section className="workflow-strip">
             {workflow.map((step, index) => {
@@ -518,11 +396,7 @@ function App() {
                   key={step.label}
                 >
                   <div className="workflow-icon">
-                    {index < 2 ? (
-                      <Check size={15} />
-                    ) : (
-                      <Icon size={15} />
-                    )}
+                    {index < 2 ? <Check size={15} /> : <Icon size={15} />}
                   </div>
 
                   <span>{step.label}</span>
@@ -535,21 +409,16 @@ function App() {
             })}
           </section>
 
-
           <div className="privacy-banner">
             <LockKeyhole size={16} />
-
             <span>
-              <strong>Private by design.</strong>{' '}
-              All analysis is running locally on the HP ZGX Nano. No patient data leaves this device.
+              <strong>Private by design.</strong> All analysis is running
+              locally on the HP ZGX Nano. No patient data leaves this device.
             </span>
-
             <button>
-              View runtime details
-              <ArrowUpRight size={14} />
+              View runtime details <ArrowUpRight size={14} />
             </button>
           </div>
-
 
           <section className="stats-grid">
             <StatCard
@@ -562,16 +431,8 @@ function App() {
 
             <StatCard
               label="Average form quality"
-              value={
-                analysisResult
-                  ? `${formScore}%`
-                  : '78%'
-              }
-              delta={
-                analysisResult
-                  ? 'This session'
-                  : 'Improving'
-              }
+              value={analysisResult ? `${formScore}%` : '78%'}
+              delta={analysisResult ? 'This session' : 'Improving'}
               tone="green"
               icon={HeartPulse}
             />
@@ -593,7 +454,6 @@ function App() {
             />
           </section>
 
-
           <div className="dashboard-grid">
             <section className="panel analysis-panel">
               <PanelHeading
@@ -604,15 +464,11 @@ function App() {
 
               <div className="session-context">
                 <div className="patient-mini">
-                  <div className="patient-avatar">
-                    JM
-                  </div>
+                  <div className="patient-avatar">JM</div>
 
                   <div>
                     <strong>Jordan Mitchell</strong>
-                    <span>
-                      Post-knee rehabilitation · Week 3
-                    </span>
+                    <span>Post-knee rehabilitation · Week 3</span>
                   </div>
                 </div>
 
@@ -622,21 +478,16 @@ function App() {
                 </div>
               </div>
 
-
               <div className="video-stage">
                 <div className="video-toolbar">
                   <span className="recording-dot" />
                   Recorded exercise
-                  <span className="video-time">
-                    00:18 / 00:32
-                  </span>
+                  <span className="video-time">00:18 / 00:32</span>
                 </div>
 
                 <div
                   className={`pose-scene ${
-                    videoPreviewUrl
-                      ? 'has-uploaded-video'
-                      : ''
+                    videoPreviewUrl ? 'has-uploaded-video' : ''
                   }`}
                 >
                   {videoPreviewUrl ? (
@@ -670,24 +521,15 @@ function App() {
                   )}
 
                   <div className="angle-chip">
-                    <span>
-                      Range of motion
-                    </span>
-
-                    <strong>
-                      {analysisResult
-                        ? `${analysisResult.range_of_motion_deg}°`
-                        : '62.4°'}
-                    </strong>
+                    <span>Knee angle</span>
+                    <strong>62.4°</strong>
                   </div>
                 </div>
 
                 <div className="video-footer">
                   <span>
                     <Video size={15} />
-                    {selectedVideo
-                      ? 'Uploaded video'
-                      : 'Camera input'}
+                    {selectedVideo ? 'Uploaded video' : 'Camera input'}
                   </span>
 
                   <span>
@@ -696,23 +538,17 @@ function App() {
                   </span>
 
                   <span className="video-status">
-                    {selectedVideo
-                      ? 'Video selected'
-                      : 'Ready to review'}
+                    {selectedVideo ? 'Video selected' : 'Ready to review'}
                   </span>
                 </div>
               </div>
 
-
               <div className="video-upload-row">
                 <button
                   className="secondary-button"
-                  onClick={() =>
-                    videoInputRef.current?.click()
-                  }
+                  onClick={() => videoInputRef.current?.click()}
                 >
                   <Upload size={15} />
-
                   {selectedVideo
                     ? 'Choose another video'
                     : 'Choose exercise video'}
@@ -729,25 +565,15 @@ function App() {
                 </span>
               </div>
 
-
               <div className="analysis-actions">
-                <button
-                  className="secondary-button"
-                  onClick={() => {
-                    setAnalysisResult(null);
-                    setAnalysisState('ready');
-                    setAnalysisError('');
-                  }}
-                >
+                <button className="secondary-button">
                   <RotateCcw size={15} />
                   Re-run
                 </button>
 
                 <button
                   className={`primary-button analysis-button ${
-                    analysisState === 'complete'
-                      ? 'success-button'
-                      : ''
+                    analysisState === 'complete' ? 'success-button' : ''
                   }`}
                   onClick={startAnalysis}
                   disabled={analysisState === 'running'}
@@ -757,12 +583,10 @@ function App() {
                   ) : (
                     <Play size={16} />
                   )}
-
                   {analysisLabel}
                 </button>
               </div>
             </section>
-
 
             <section className="panel evidence-panel">
               <PanelHeading
@@ -773,13 +597,10 @@ function App() {
 
               <div className="quality-score">
                 <div>
-                  <span className="metric-label">
-                    Form quality
-                  </span>
+                  <span className="metric-label">Form quality</span>
 
                   <div className="score-line">
                     <strong>{formLabel}</strong>
-
                     <span className="confidence-pill">
                       {analysisResult
                         ? `${confidenceLabel} confidence`
@@ -793,7 +614,6 @@ function App() {
                   <small>%</small>
                 </div>
               </div>
-
 
               <div className="metric-list">
                 <MetricRow
@@ -809,7 +629,9 @@ function App() {
 
                 <MetricRow
                   label="Correct form"
-                  value={`${analysisResult?.correct_repetitions ?? 0} / ${analysisResult?.repetitions ?? targetRepetitions}`}
+                  value={`${analysisResult?.correct_repetitions ?? 0} / ${
+                    analysisResult?.repetitions ?? targetRepetitions
+                  }`}
                   detail={
                     analysisResult
                       ? `${Math.max(
@@ -853,15 +675,12 @@ function App() {
                 />
               </div>
 
-
               <div className="evidence-card">
                 <div className="evidence-title">
                   <Sparkles size={15} />
                   Evidence card
                   <span>
-                    {analysisResult
-                      ? 'Verified'
-                      : 'Awaiting analysis'}
+                    {analysisResult ? 'Verified' : 'Awaiting analysis'}
                   </span>
                 </div>
 
@@ -872,15 +691,12 @@ function App() {
                 </p>
 
                 <button>
-                  View frame evidence
-                  <ArrowUpRight size={14} />
+                  View frame evidence <ArrowUpRight size={14} />
                 </button>
               </div>
 
-
               <div className="uncertainty-note">
                 <CircleHelp size={15} />
-
                 <span>
                   <strong>Uncertainty:</strong>{' '}
                   {analysisResult?.observations?.[1] ??
@@ -897,7 +713,6 @@ function App() {
             </section>
           </div>
 
-
           <div className="dashboard-grid lower-grid">
             <section className="panel trend-panel">
               <PanelHeading
@@ -908,14 +723,9 @@ function App() {
 
               <div className="trend-summary">
                 <div>
-                  <span className="metric-label">
-                    Overall signal
-                  </span>
-
+                  <span className="metric-label">Overall signal</span>
                   <div className="trend-value">
-                    <span className="trend-arrow">
-                      ↗
-                    </span>
+                    <span className="trend-arrow">↗</span>
                     Improving
                   </div>
                 </div>
@@ -944,10 +754,10 @@ function App() {
 
               <div className="trend-footnote">
                 <CircleHelp size={14} />
-                Trend is based on 4 sessions and should be reviewed with patient-reported context.
+                Trend is based on 4 sessions and should be reviewed with
+                patient-reported context.
               </div>
             </section>
-
 
             <section className="panel checkin-panel">
               <PanelHeading
@@ -962,10 +772,7 @@ function App() {
                 <textarea
                   value={patientComment}
                   onChange={(event) => {
-                    setPatientComment(
-                      event.target.value
-                    );
-
+                    setPatientComment(event.target.value);
                     setCheckinState('idle');
                   }}
                   aria-label="Patient comment"
@@ -974,13 +781,10 @@ function App() {
 
               <div className="checkin-meta">
                 <span>
-                  <strong>Voice transcript</strong>{' '}
-                  · Whisper local
+                  <strong>Voice transcript</strong> · Whisper local
                 </span>
 
-                <span className="confidence-pill">
-                  0.79 confidence
-                </span>
+                <span className="confidence-pill">0.79 confidence</span>
               </div>
 
               <div className="pain-heading">
@@ -989,15 +793,17 @@ function App() {
               </div>
 
               <div className="pain-scale">
-                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
-                  <button
-                    key={value}
-                    className={pain === value ? "selected" : ""}
-                    onClick={() => setPain(value)}
-                  >
-                    {value}
-                  </button>
-                ))}
+                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(
+                  (value) => (
+                    <button
+                      key={value}
+                      className={pain === value ? 'selected' : ''}
+                      onClick={() => updatePain(value)}
+                    >
+                      {value}
+                    </button>
+                  )
+                )}
               </div>
 
               <div className="pain-labels">
@@ -1032,7 +838,6 @@ function App() {
             </section>
           </div>
 
-
           <section className="panel approval-panel">
             <div className="approval-copy">
               <div className="approval-icon">
@@ -1040,16 +845,18 @@ function App() {
               </div>
 
               <div>
-                <div className="eyebrow">
-                  Therapist decision
-                </div>
+                <div className="eyebrow">Therapist decision</div>
 
                 <h2>
-                  Review the next approved protocol step
+                  {painReviewRequired
+                    ? 'Pause and request therapist review'
+                    : 'Review the next approved protocol step'}
                 </h2>
 
                 <p>
-                  Based on the evidence, the system suggests continuing the existing seated leg-extension protocol with the same target range. No new exercise was generated.
+                  {painReviewRequired
+                    ? 'The reported pain is above the review threshold. The system will not approve the next protocol step automatically.'
+                    : 'Based on the evidence, the system suggests continuing the existing seated leg-extension protocol with the same target range. No new exercise was generated.'}
                 </p>
 
                 <div className="approval-details">
@@ -1059,8 +866,15 @@ function App() {
                   </span>
 
                   <span>
-                    <Check size={14} />
-                    Pain below review threshold
+                    {painReviewRequired ? (
+                      <X size={14} />
+                    ) : (
+                      <Check size={14} />
+                    )}
+
+                    {painReviewRequired
+                      ? 'Pain above review threshold'
+                      : 'Pain below review threshold'}
                   </span>
 
                   <span>
@@ -1072,18 +886,21 @@ function App() {
             </div>
 
             <div className="approval-actions">
-              {approved ? (
+              {decisionState === 'approve' ? (
                 <div className="approved-state">
                   <Check size={17} />
                   Approved for next session
+                </div>
+              ) : decisionState === 'request_changes' ? (
+                <div className="approved-state">
+                  <Check size={17} />
+                  Changes requested
                 </div>
               ) : (
                 <>
                   <button
                     className="secondary-button"
-                    onClick={() =>
-                      saveDecision('request_changes')
-                    }
+                    onClick={() => saveDecision('request_changes')}
                     disabled={decisionState === 'saving'}
                   >
                     <X size={15} />
@@ -1092,23 +909,30 @@ function App() {
 
                   <button
                     className="primary-button"
-                    onClick={() =>
-                      saveDecision('approve')
+                    onClick={() => saveDecision('approve')}
+                    disabled={
+                      decisionState === 'saving' || painReviewRequired
                     }
-                    disabled={decisionState === 'saving'}
                   >
                     <Check size={15} />
-                    Approve protocol
+                    {painReviewRequired ? 'Review required' : 'Approve protocol'}
                   </button>
                 </>
               )}
             </div>
-          </section>
 
+            {decisionError && (
+              <div className="backend-error">
+                <X size={14} />
+                {decisionError}
+              </div>
+            )}
+          </section>
 
           <footer className="app-footer">
             <span>
-              Recovery Monitor is a therapist support tool, not medical advice.
+              Recovery Monitor is a therapist support tool, not medical
+              advice.
             </span>
 
             <span>
@@ -1122,14 +946,7 @@ function App() {
   );
 }
 
-
-function StatCard({
-  label,
-  value,
-  delta,
-  tone,
-  icon: Icon,
-}) {
+function StatCard({ label, value, delta, tone, icon: Icon }) {
   return (
     <div className="stat-card">
       <div className={`stat-icon ${tone}`}>
@@ -1139,13 +956,7 @@ function StatCard({
       <div className="stat-copy">
         <span>{label}</span>
         <strong>{value}</strong>
-        <small
-          className={
-            tone === 'amber'
-              ? 'amber-text'
-              : 'green-text'
-          }
-        >
+        <small className={tone === 'amber' ? 'amber-text' : 'green-text'}>
           {delta}
         </small>
       </div>
@@ -1153,12 +964,7 @@ function StatCard({
   );
 }
 
-
-function PanelHeading({
-  title,
-  meta,
-  action,
-}) {
+function PanelHeading({ title, meta, action }) {
   return (
     <div className="panel-heading">
       <div>
@@ -1167,20 +973,13 @@ function PanelHeading({
       </div>
 
       <button className="text-button">
-        {action}
-        <ArrowUpRight size={14} />
+        {action} <ArrowUpRight size={14} />
       </button>
     </div>
   );
 }
 
-
-function MetricRow({
-  label,
-  value,
-  detail,
-  tone,
-}) {
+function MetricRow({ label, value, detail, tone }) {
   return (
     <div className="metric-row">
       <div>
@@ -1195,7 +994,6 @@ function MetricRow({
     </div>
   );
 }
-
 
 function TrendChart() {
   return (
@@ -1213,67 +1011,18 @@ function TrendChart() {
             y1="0"
             y2="1"
           >
-            <stop
-              offset="0%"
-              stopColor="#2878d5"
-              stopOpacity="0.18"
-            />
-
-            <stop
-              offset="100%"
-              stopColor="#2878d5"
-              stopOpacity="0"
-            />
+            <stop offset="0%" stopColor="#2878d5" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="#2878d5" stopOpacity="0" />
           </linearGradient>
         </defs>
 
-        <line
-          x1="34"
-          y1="26"
-          x2="650"
-          y2="26"
-          className="chart-grid"
-        />
+        <line x1="34" y1="26" x2="650" y2="26" className="chart-grid" />
+        <line x1="34" y1="77" x2="650" y2="77" className="chart-grid" />
+        <line x1="34" y1="128" x2="650" y2="128" className="chart-grid" />
 
-        <line
-          x1="34"
-          y1="77"
-          x2="650"
-          y2="77"
-          className="chart-grid"
-        />
-
-        <line
-          x1="34"
-          y1="128"
-          x2="650"
-          y2="128"
-          className="chart-grid"
-        />
-
-        <text
-          x="4"
-          y="30"
-          className="chart-label"
-        >
-          100
-        </text>
-
-        <text
-          x="12"
-          y="81"
-          className="chart-label"
-        >
-          50
-        </text>
-
-        <text
-          x="20"
-          y="132"
-          className="chart-label"
-        >
-          0
-        </text>
+        <text x="4" y="30" className="chart-label">100</text>
+        <text x="12" y="81" className="chart-label">50</text>
+        <text x="20" y="132" className="chart-label">0</text>
 
         <path
           d="M34 120 C130 113, 155 109, 230 92 S350 91, 420 71 S550 71, 650 45 L650 145 L34 145 Z"
@@ -1290,70 +1039,21 @@ function TrendChart() {
           className="chart-path purple-path"
         />
 
-        <circle
-          cx="34"
-          cy="120"
-          r="4"
-          className="chart-point blue-point"
-        />
+        <circle cx="34" cy="120" r="4" className="chart-point blue-point" />
+        <circle cx="230" cy="92" r="4" className="chart-point blue-point" />
+        <circle cx="420" cy="71" r="4" className="chart-point blue-point" />
+        <circle cx="650" cy="45" r="5" className="chart-point blue-point" />
 
-        <circle
-          cx="230"
-          cy="92"
-          r="4"
-          className="chart-point blue-point"
-        />
-
-        <circle
-          cx="420"
-          cy="71"
-          r="4"
-          className="chart-point blue-point"
-        />
-
-        <circle
-          cx="650"
-          cy="45"
-          r="5"
-          className="chart-point blue-point"
-        />
-
-        <circle
-          cx="34"
-          cy="60"
-          r="4"
-          className="chart-point purple-point"
-        />
-
-        <circle
-          cx="230"
-          cy="82"
-          r="4"
-          className="chart-point purple-point"
-        />
-
-        <circle
-          cx="420"
-          cy="103"
-          r="4"
-          className="chart-point purple-point"
-        />
-
-        <circle
-          cx="650"
-          cy="117"
-          r="5"
-          className="chart-point purple-point"
-        />
+        <circle cx="34" cy="60" r="4" className="chart-point purple-point" />
+        <circle cx="230" cy="82" r="4" className="chart-point purple-point" />
+        <circle cx="420" cy="103" r="4" className="chart-point purple-point" />
+        <circle cx="650" cy="117" r="5" className="chart-point purple-point" />
       </svg>
     </div>
   );
 }
 
-
-createRoot(
-  document.getElementById('root')
-).render(
+createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />
   </StrictMode>
