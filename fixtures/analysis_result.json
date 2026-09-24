@@ -3,7 +3,7 @@
  "source": "upload",
  "exercise": "squat",
  "status": "complete",
- "analyzed_at": "2026-09-24T02:10:16+00:00",
+ "analyzed_at": "2026-09-24T02:15:11+00:00",
  "origin": "local_mediapipe_xgboost",
  "form_score": 77,
  "repetitions": 21,
@@ -14,6 +14,7 @@
  "observations": [
   "Detected 21 squat repetitions; 16 reached the target depth of 100\u00b0.",
   "6 reps were flagged for your physiotherapist to review.",
+  "Stand side-on to the camera so your knee bend is visible; angle measurements are only accurate from the side.",
   "This is a movement measurement to support your physiotherapist, not a clinical assessment."
  ],
  "evidence": [
@@ -131,9 +132,9 @@
    },
    {
     "name": "camera_view",
-    "passed": true,
+    "passed": false,
     "value": 0.4,
-    "message": null
+    "message": "Stand side-on to the camera so your knee bend is visible; angle measurements are only accurate from the side."
    },
    {
     "name": "full_rep",
@@ -142,13 +143,16 @@
     "message": null
    }
   ],
-  "instructions": []
+  "instructions": [
+   "Stand side-on to the camera so your knee bend is visible; angle measurements are only accurate from the side."
+  ]
  },
  "metrics": {
   "side": "left",
   "min_knee_angle_deg": 47.8,
   "median_depth_deg": 88.3,
   "reps_reaching_target": 16,
+  "expected_angle_error_deg": 25.7,
   "median_rep_duration_s": 3.27
  },
  "reps": [

@@ -33,6 +33,8 @@ MIN_PERSON_FRACTION = 0.8
 MIN_LEG_FRACTION = 0.7
 MIN_BRIGHTNESS = 0.12
 VIEW_SIDE_MAX, VIEW_FRONT_MIN = 0.22, 0.60   # shoulder width / torso length, validated per rep on REHAB24-6
+# Measured knee-angle error vs motion capture by view (model/results/angle_accuracy_squat.json, per-frame MAE)
+ANGLE_ERROR_DEG = {"side": 5.3, "half_profile": 25.7, "front": 41.8}
 
 # How to phrase each session-relative feature when the model flags a rep (#27).
 # base feature -> (what it measures, unit, message when higher than usual, message when lower than usual)
@@ -98,11 +100,12 @@ def quality_check(lm: dict, s: Series, n_reps: int) -> dict:
         ("legs_visible", legs >= MIN_LEG_FRACTION, legs,
          "Step back so your hips, knees and feet are visible the whole time."),
         ("lighting", bright >= MIN_BRIGHTNESS, bright, "Add more light or face a window."),
-        ("camera_view", view != "front", ratio,
-         "Turn about 45 degrees to the camera (not facing it) so your knee bend is visible."),
+        ("camera_view", view == "side", ratio,
+         "Stand side-on to the camera so your knee bend is visible; angle measurements are only accurate "
+         "from the side."),
         ("full_rep", n_reps >= 1, n_reps, "We could not see a complete squat. Record at least one full rep."),
     ]
-    hard = {"person_visible", "legs_visible", "lighting", "full_rep"}  # front view -> uncertain, not rejected
+    hard = {"person_visible", "legs_visible", "lighting", "full_rep"}  # wrong view -> caveat/uncertain, not rejected
     return {
         "passed": all(ok for name, ok, _, _ in checks if name in hard),
         "view": view,
@@ -254,6 +257,7 @@ def analyze_landmarks(lm: dict, exercise: str = "squat", protocol: dict | None =
             "min_knee_angle_deg": _num(min((f["min_knee_angle"] for f in feats), default=None)),
             "median_depth_deg": _num(float(np.median([f["min_knee_angle"] for f in feats])) if feats else None),
             "reps_reaching_target": int(reached),
+            "expected_angle_error_deg": ANGLE_ERROR_DEG.get(quality["view"]),
             "median_rep_duration_s": _num(float(np.median([f["duration_s"] for f in feats])) if feats else None, 2),
         },
         "reps": rep_out,
