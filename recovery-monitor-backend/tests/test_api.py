@@ -138,6 +138,20 @@ def test_authenticated_patient_therapist_intake_flow(client):
     intake_id = intake.json()["id"]
 
     client.cookies.clear()
+    mismatch = client.post("/api/auth/signup", json={
+        "email": "workflow-upper@example.com",
+        "password": "development-password",
+        "role": "therapist",
+    })
+    assert mismatch.status_code == 201
+    assert client.put("/api/onboarding/therapist", json={
+        "name": "Upper Body Therapist",
+        "specializations": ["upper_body"],
+        "supported_exercises": ["push_ups"],
+    }).status_code == 200
+    assert client.get("/api/therapist/intakes").json() == []
+
+    client.cookies.clear()
     therapist = client.post("/api/auth/signup", json={
         "email": "workflow-therapist@example.com",
         "password": "development-password",

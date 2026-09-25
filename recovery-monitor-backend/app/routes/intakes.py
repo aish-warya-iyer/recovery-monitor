@@ -11,6 +11,12 @@ from app.auth import current_user
 
 router = APIRouter(prefix="/api", tags=["intakes"])
 EXERCISES = {"arm_abduction", "arm_vw", "push_ups", "leg_abduction", "leg_lunge", "squat"}
+AREA_SPECIALIZATIONS = {
+    "shoulder_arm": {"upper_body"}, "elbow_forearm": {"upper_body"}, "wrist_hand": {"upper_body"},
+    "hip": {"lower_body"}, "knee": {"lower_body"}, "ankle_foot": {"lower_body"},
+    "back_core": {"lower_body", "general_mobility"}, "general_mobility": {"general_mobility"},
+    "other": {"general_mobility"},
+}
 
 
 class IntakeIn(BaseModel):
@@ -61,6 +67,22 @@ def _therapist(user: dict) -> None:
         raise HTTPException(403, "Therapist account required")
 
 
+def _matches_specialization(user_id: str, row: dict) -> bool:
+    specializations = {item["specialization"] for item in db.all_(
+        "SELECT specialization FROM therapist_specializations WHERE user_id=?", user_id
+    )}
+    if not specializations:
+        return False
+    areas = json.loads(row["affected_areas_json"])
+    return any(specializations.intersection(AREA_SPECIALIZATIONS.get(area, {"general_mobility"})) for area in areas)
+
+
+def _accessible_to(user_id: str, row: dict) -> bool:
+    return row["assigned_therapist_id"] == user_id or (
+        row["assigned_therapist_id"] is None and _matches_specialization(user_id, row)
+    )
+
+
 @router.post("/patient/intakes", status_code=201)
 def create_intake(body: IntakeIn, request: Request):
     user = current_user(request)
@@ -98,7 +120,8 @@ def therapist_intakes(request: Request, status: str | None = None):
         sql += " AND status=?"
         args.append(status)
     sql += " ORDER BY created_at DESC"
-    return [_intake(row) for row in db.all_(sql, *args)]
+    rows = db.all_(sql, *args)
+    return [_intake(row) for row in rows if _accessible_to(user["id"], row)]
 
 
 @router.get("/therapist/intakes/{intake_id}")
@@ -107,6 +130,8 @@ def therapist_intake(intake_id: str, request: Request):
     _therapist(user)
     row = db.one("SELECT * FROM patient_intakes WHERE id=? AND (assigned_therapist_id IS NULL OR assigned_therapist_id=?)",
                  intake_id, user["id"])
+    if row and not _accessible_to(user["id"], row):
+        raise HTTPException(404, "No matching intake")
     return _intake(row)
 
 
@@ -118,7 +143,7 @@ def create_plan(intake_id: str, body: PlanIn, request: Request):
         raise HTTPException(422, "Unsupported exercise")
     intake = db.one("SELECT * FROM patient_intakes WHERE id=? AND (assigned_therapist_id IS NULL OR assigned_therapist_id=?)",
                     intake_id, user["id"])
-    if not intake:
+    if not intake or not _accessible_to(user["id"], intake):
         raise HTTPException(404, "No accessible intake")
     if body.reference_video_id and not db.one("SELECT id FROM reference_videos WHERE id=?", body.reference_video_id):
         raise HTTPException(422, "Unknown reference video")
@@ -176,6 +201,8 @@ def claim_intake(intake_id: str, request: Request):
         raise HTTPException(404, "No such intake")
     if intake["assigned_therapist_id"] and intake["assigned_therapist_id"] != user["id"]:
         raise HTTPException(409, "This patient already has a therapist")
+    if not _matches_specialization(user["id"], intake):
+        raise HTTPException(403, "This request does not match your specialization")
     with db.tx() as c:
         c.execute("UPDATE patient_intakes SET assigned_therapist_id=?, status='under_review', updated_at=? WHERE id=?", (user["id"], db.now(), intake_id))
         c.execute("INSERT OR REPLACE INTO therapist_intake_decisions (intake_id,therapist_user_id,decision,created_at) VALUES (?,?,?,?)", (intake_id, user["id"], "accepted", db.now()))
