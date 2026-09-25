@@ -17,15 +17,15 @@ export default function RepList({ reps, onSelect, selected, labels, onLabel, phy
             onClick={() => onSelect?.(r)}
             onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onSelect?.(r); } }}>
             <div className="rep-top">
-              <strong>Rep {r.index}</strong>
-              <span className="rep-inline">
-                {num(r.peak_deg ?? r.min_knee_angle_deg, 0, '°')} · {num(r.duration_s, 1, ' s')}
-              </span>
+              <span className="rep-num">{r.index}</span>
+              <div className="rep-body">
+                <strong>{measure} {num(r.peak_deg ?? r.min_knee_angle_deg, 0, '°')} <span className="rep-inline">· {num(r.duration_s, 1, ' s')}</span></strong>
+                {!open && reasons.length > 0 && <p className="rep-teaser">{reasons[0].message}{reasons.length > 1 ? ` · +${reasons.length - 1} more` : ''}</p>}
+              </div>
               {label ? (
                 <span className={`badge ${label === 'correct' ? 'badge-green' : 'badge-amber'}`}>You: {label}</span>
               ) : <RepVerdict rep={r} />}
             </div>
-            {!open && reasons.length > 0 && <p className="rep-teaser">{reasons[0].message}{reasons.length > 1 ? ` · +${reasons.length - 1} more` : ''}</p>}
             <div className="rep-detail" inert={!open}>
               <div className="rep-detail-inner">
                 <div className="rep-metrics">

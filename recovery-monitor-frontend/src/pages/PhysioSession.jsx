@@ -1,11 +1,11 @@
-import { ArrowLeft, Check, Mic, RotateCcw } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CalendarDays, Check, CheckCircle2, Cpu, Dumbbell, HelpCircle, Mic, RotateCcw, XCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
 import AiReport, { AGREEMENT } from '../components/AiReport.jsx';
 import RepList from '../components/RepList.jsx';
 import { exerciseName } from '../exercises.js';
 import SessionPlayer from '../components/SessionPlayer.jsx';
-import { Disclosure, ErrorNote, FlagBadge, Note, Panel, Stat } from '../components/ui.jsx';
+import { Disclosure, ErrorNote, Initials, Panel, Stat } from '../components/ui.jsx';
 import { fmtDateTime, go, num, pct, useLoad } from '../hooks.js';
 
 export default function PhysioSession({ sessionId }) {
@@ -72,51 +72,87 @@ export default function PhysioSession({ sessionId }) {
   const [agreeCls, agreeLabel] = s.report ? (AGREEMENT[s.report.agreement] ?? AGREEMENT.not_enough_info) : ['badge-grey', 'Report pending'];
   const reasons = s.flag?.reasons ?? [];
 
+  const reps = r?.reps ?? [];
+  const target = r?.protocol?.target_reps ?? s.protocol?.target_reps;
+  const done = r?.repetitions ?? 0;
+  const ringPct = target ? Math.min(1, done / target) : 1;
+  const pain = s.check_in?.pain_score;
+  const limit = s.protocol?.pain_threshold;
+  const severity = s.flag?.severity ?? 'none';
+  const name = patient.data?.name ?? s.patient_id;
+  const AgreeIcon = { 'badge-green': CheckCircle2, 'badge-amber': AlertTriangle, 'badge-red': XCircle }[agreeCls] ?? HelpCircle;
+
   return (
     <div className="page session-review">
       <button className="text-button back" onClick={() => go('/physio')}><ArrowLeft size={14} /> Review queue</button>
-      <header className="page-heading">
-        <div>
-          <span className="eyebrow">Session review · {fmtDateTime(s.created_at)}</span>
-          <h1>{patient.data?.name ?? s.patient_id}</h1>
-          <p className="page-subtitle">{exerciseName(r?.exercise ?? s.exercise)}</p>
+      <header className="session-hero">
+        <Initials name={name} className="avatar" />
+        <div className="hero-text">
+          <span className="eyebrow">Session review</span>
+          <h1>{name}</h1>
+          <div className="hero-meta">
+            <span className="chip"><Dumbbell size={13} /> {exerciseName(r?.exercise ?? s.exercise)}</span>
+            <span className="chip"><CalendarDays size={13} /> {fmtDateTime(s.created_at)}</span>
+            <span className="chip"><Cpu size={13} /> Analysed on the HP ZGX Nano</span>
+          </div>
         </div>
-        <FlagBadge flag={s.flag} />
+        <span className={`status-pill ${severity}`}><i />{{ urgent: 'Urgent review', review: 'Needs review', none: 'No flags' }[severity] ?? 'Analysing'}</span>
       </header>
 
       <div className="glance">
         <div className="glance-tile">
-          <span>Reps</span>
-          <strong>{r ? r.repetitions : '—'}<small> / {r?.protocol?.target_reps ?? '—'}</small></strong>
+          <svg className="ring" viewBox="0 0 58 58" aria-hidden="true">
+            <circle className="track" cx="29" cy="29" r="24" />
+            <circle className="value" cx="29" cy="29" r="24" strokeDasharray={150.8} strokeDashoffset={150.8 * (1 - ringPct)} />
+          </svg>
+          <div className="glance-text">
+            <span className="glance-label">Reps completed</span>
+            <span className="glance-value">{r ? done : '—'}<small>/ {target ?? '—'}</small></span>
+          </div>
         </div>
-        <div className={`glance-tile ${flaggedReps ? 'amber' : 'green'}`}>
-          <span>Need a look</span>
-          <strong>{r ? flaggedReps : '—'}<small> rep{flaggedReps === 1 ? '' : 's'}</small></strong>
+        <div className={`glance-tile ${flaggedReps ? 'tone-amber' : 'tone-green'}`}>
+          <div className="glance-text">
+            <span className="glance-label">Reps that need a look</span>
+            <span className="glance-value">{r ? flaggedReps : '—'}<small>of {reps.length}</small></span>
+            <div className="rep-dots" aria-hidden="true">{reps.map((x) => <i key={x.index} className={x.predicted_correct ? '' : 'off'} />)}</div>
+          </div>
         </div>
-        <div className={`glance-tile ${painHigh ? 'red' : ''}`}>
-          <span>Pain</span>
-          <strong>{s.check_in ? s.check_in.pain_score : '—'}<small> / 10</small></strong>
+        <div className={`glance-tile pain ${painHigh ? 'tone-red' : ''}`}>
+          <div className="glance-text">
+            <span className="glance-label">Pain reported</span>
+            <span className="glance-value">{pain ?? '—'}<small>/ 10</small></span>
+            <div className="pain-meter" aria-hidden="true">
+              {limit != null && <span className="limit" style={{ left: `${limit * 10}%` }} title={`Alert at ${limit}`} />}
+              {pain != null && <span className="mark" style={{ left: `${pain * 10}%` }} />}
+            </div>
+          </div>
         </div>
         <div className="glance-tile">
-          <span>Voice vs video</span>
-          <span className={`badge ${agreeCls}`}>{agreeLabel}</span>
+          <span className={`agree-icon ${agreeCls}`}><AgreeIcon size={22} /></span>
+          <div className="glance-text">
+            <span className="glance-label">Voice vs video</span>
+            <span className="agree-text">{agreeLabel}</span>
+          </div>
         </div>
       </div>
 
       {(reasons.length > 0 || r?.vlm?.mismatch) && (
-        <Note tone={s.flag?.severity === 'urgent' ? 'error' : 'warn'}>
-          <strong>{reasons[0] ?? 'Different exercise detected'}</strong>
-          {reasons.length > 1 && <ul>{reasons.slice(1).map((x) => <li key={x}>{x}</li>)}</ul>}
-          {r?.vlm?.mismatch && (
-            <p className="note-line">The plan is <b>{exerciseName(r.vlm.planned_exercise).toLowerCase()}</b>, but our video model sees
-              {' '}<b>{exerciseName(r.vlm.detected_exercise).toLowerCase()}</b>, so it was analysed as what was actually done.</p>
-          )}
-        </Note>
+        <div className={`attention ${severity === 'urgent' ? 'urgent' : 'review'}`}>
+          <span className="attention-icon"><AlertTriangle size={18} /></span>
+          <div>
+            <strong>{reasons[0] ?? 'Different exercise detected'}</strong>
+            {reasons.length > 1 && <div className="attention-reasons">{reasons.slice(1).map((x) => <span key={x}>{x}</span>)}</div>}
+            {r?.vlm?.mismatch && (
+              <p>The plan is <b>{exerciseName(r.vlm.planned_exercise).toLowerCase()}</b>, but our video model sees
+                {' '}<b>{exerciseName(r.vlm.detected_exercise).toLowerCase()}</b>, so it was analysed as what was actually done.</p>
+            )}
+          </div>
+        </div>
       )}
 
       <div className="review-layout">
         <div>
-          <Panel title="Movement" subtitle="Click a rep or the chart to jump there · J / K next / previous rep">
+          <Panel title="Movement" className="stage" subtitle="Click a rep or the chart to jump there · J / K for next / previous rep">
             <SessionPlayer ref={player} session={s} selectedRep={selected} />
             {r && (
               <Disclosure label="Measurements and how this was analysed" openLabel="Hide measurements">
@@ -159,7 +195,7 @@ export default function PhysioSession({ sessionId }) {
 
           <Panel title="Patient check-in">
             {s.check_in ? (
-              <div className="checkin">
+              <div className="checkin-view">
                 <div className="report-chips">
                   <span className={`badge ${painHigh ? 'badge-red' : 'badge-grey'}`}>Pain {s.check_in.pain_score}/10 · alert at {s.protocol?.pain_threshold ?? '—'}</span>
                   <span className="badge badge-grey">{s.check_in.stiffness ? 'Stiff' : 'No stiffness'}</span>

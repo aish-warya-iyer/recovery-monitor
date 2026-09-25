@@ -1,4 +1,4 @@
-import { BadgeCheck, RefreshCw, ShieldAlert, Sparkles } from 'lucide-react';
+import { AlertTriangle, BadgeCheck, GitCompare, MessageCircleQuestion, Mic, RefreshCw, Send, ShieldAlert, Sparkles, Target, Video } from 'lucide-react';
 import { useState } from 'react';
 import { api } from '../api.js';
 import { Disclosure, ErrorNote, Note, Panel } from './ui.jsx';
@@ -43,8 +43,8 @@ export default function AiReport({ session, onUpdated }) {
   }
   const [cls, label] = AGREEMENT[r.agreement] ?? AGREEMENT.not_enough_info;
   return (
-    <Panel title="AI draft report" action={action} className="report-card"
-      subtitle={r.source === 'llm' ? `${r.model} · written on this device` : 'Template (local model unavailable)'}>
+    <Panel title={<><span className="ai-mark"><Sparkles size={14} /></span> AI draft report</>} action={action} className="report-card"
+      subtitle={r.source === 'llm' ? `${r.model} · written on this device, for you to check` : 'Template (local model unavailable)'}>
       <div className="report-summary">
         <div className="report-chips">
           <span className={`badge ${cls}`}>{label}</span>
@@ -53,7 +53,8 @@ export default function AiReport({ session, onUpdated }) {
           )}
           {r.checks?.numbers_verified && <span className="badge badge-grey"><BadgeCheck size={12} /> Numbers checked</span>}
         </div>
-        <p className="report-headline"><Sparkles size={14} /> {r.suggested_next_step}</p>
+        <span className="report-kicker">Suggested next step</span>
+        <p className="report-headline">{r.suggested_next_step}</p>
       </div>
 
       <Disclosure label="View full report" openLabel="Hide full report" className="report-more">
@@ -64,18 +65,18 @@ export default function AiReport({ session, onUpdated }) {
           </Note>
         )}
         <div className="report">
-          <section><h4>Patient said</h4><p>{r.patient_said}</p></section>
-          <section><h4>Video showed</h4><p>{r.movement_summary}</p></section>
-          <section><h4>Do they match?</h4><p>{r.agreement_note}</p></section>
-          {r.concerns?.length > 0 && <section><h4>Concerns</h4><ul>{r.concerns.map((c) => <li key={c}>{c}</li>)}</ul></section>}
+          <section className="quote"><h4><Mic size={14} /> Patient said</h4><p>{r.patient_said}</p></section>
+          <section><h4><Video size={14} /> Video showed</h4><p>{r.movement_summary}</p></section>
+          <section><h4><GitCompare size={14} /> Do they match?</h4><p>{r.agreement_note}</p></section>
+          {r.concerns?.length > 0 && <section><h4><AlertTriangle size={14} /> Concerns</h4><ul>{r.concerns.map((c) => <li key={c}>{c}</li>)}</ul></section>}
           {r.questions_for_patient?.length > 0 && (
-            <section><h4>Questions you could ask</h4><ul>{r.questions_for_patient.map((c) => <li key={c}>{c}</li>)}</ul></section>
+            <section><h4><MessageCircleQuestion size={14} /> Questions you could ask</h4><ul>{r.questions_for_patient.map((c) => <li key={c}>{c}</li>)}</ul></section>
           )}
           {r.coaching_cues?.length > 0 && (
-            <section><h4>Coaching cues</h4><ul>{r.coaching_cues.map((c) => <li key={c}>{c}</li>)}</ul></section>
+            <section><h4><Target size={14} /> Coaching cues</h4><ul>{r.coaching_cues.map((c) => <li key={c}>{c}</li>)}</ul></section>
           )}
           <section className="to-patient">
-            <h4>Message to the patient</h4>
+            <h4><Send size={14} /> Message to the patient</h4>
             <p>{r.patient_message}</p>
             <small className="muted">Only shown to the patient after you approve or request changes.</small>
           </section>

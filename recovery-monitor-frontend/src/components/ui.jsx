@@ -69,9 +69,9 @@ export function Disclaimer() {
   );
 }
 
-export function Initials({ name }) {
+export function Initials({ name, className = '' }) {
   const s = (name || '?').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-  return <span className="initials">{s}</span>;
+  return <span className={`initials ${className}`}>{s}</span>;
 }
 
 // Progressive disclosure: a summary stays visible, details open on request (animated, reduced-motion safe).
