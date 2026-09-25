@@ -63,6 +63,9 @@ def _intake(row: dict) -> dict:
     plan = db.one("SELECT * FROM plan_drafts WHERE intake_id=? ORDER BY created_at DESC LIMIT 1", row["id"])
     result["plan"] = plan
     result["patient"] = db.one("SELECT u.id, u.email, pp.name FROM users u LEFT JOIN patient_profiles pp ON pp.user_id=u.id WHERE u.id=?", row["patient_user_id"])
+    result["therapist"] = row["assigned_therapist_id"] and db.one(
+        "SELECT u.id, u.email, tp.name FROM users u LEFT JOIN therapist_profiles tp ON tp.user_id=u.id WHERE u.id=?",
+        row["assigned_therapist_id"])
     return result
 
 

@@ -26,6 +26,7 @@ export default function PatientIntake() {
   const [form, setForm] = useState(null);
   const [error, setError] = useState(null);
   const [therapist, setTherapist] = useState(null);
+  const [meId, setMeId] = useState(null);
 
   async function ask(input) {
     setError(null);
@@ -53,8 +54,9 @@ export default function PatientIntake() {
         goals: form.goals.length ? form.goals : ['daily_activities'],
         notes: ai.summary_for_therapist, voice_transcript: ai.text, ai,
       });
-      const team = await api.patientCareTeam().catch(() => null);
+      const [team, me] = await Promise.all([api.patientCareTeam().catch(() => null), api.authMe().catch(() => null)]);
       setTherapist(team?.therapist ?? null);
+      setMeId(me?.user?.id ?? null);
       setStep('sent');
     } catch (e) {
       setError(e.message);
@@ -100,7 +102,10 @@ export default function PatientIntake() {
               ? 'Your physiotherapist has your request, including what you told us. They will set up your exercises; you’ll see them on your dashboard.'
               : 'A physiotherapist who covers this area will pick it up. You’ll see them on your dashboard once they do.'}
           </p>
-          <button className="primary-button" onClick={() => go('/patient')}>Go to my dashboard <ArrowRight size={15} /></button>
+          <div className="intake-actions center-row">
+            <button className="secondary-button" onClick={() => go('/patient')}>Go to Today</button>
+            <button className="primary-button" onClick={() => go(meId ? `/patient/${meId}/care` : '/patient')}>Track my request <ArrowRight size={15} /></button>
+          </div>
         </section>
       )}
     </div>

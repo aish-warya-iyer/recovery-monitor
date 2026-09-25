@@ -5,7 +5,7 @@ import { exerciseName } from '../exercises.js';
 import { ErrorNote, FlagBadge, Initials, Panel } from '../components/ui.jsx';
 import { fmtDateTime, go, usePoll } from '../hooks.js';
 
-export default function PhysioQueue() {
+export default function PhysioQueue({ view = 'queue' }) {
   const queue = usePoll(() => api.reviewQueue(), 5000);
   const patients = usePoll(() => api.patients(), 15000);
   const intakes = usePoll(() => api.therapistIntakes(), 10000);
@@ -26,22 +26,37 @@ export default function PhysioQueue() {
       <header className="page-heading queue-hero">
         <div>
           <span className="eyebrow">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</span>
-          <h1>Review queue</h1>
-          <p className="page-subtitle">Sessions the on-device models flagged for your attention. Urgent first.</p>
+          <h1>{{ queue: 'Review queue', requests: 'New requests', patients: 'Patients' }[view]}</h1>
+          <p className="page-subtitle">{{
+            queue: 'Sessions the on-device models flagged for your attention. Urgent first.',
+            requests: 'Patients matched to you by specialty. Each request was written up by the AI assistant from what the patient said.',
+            patients: 'Open a patient to see what they told us, their trend, and to set or change their plan.',
+          }[view]}</p>
         </div>
         <span className="chip"><span className="status-dot" style={{ color: '#34c759' }} /> Updates live</span>
       </header>
       <ErrorNote error={queue.error || patients.error || intakes.error || decisionError} />
 
-      <section className="care-overview" aria-label="Overview">
+      {view === 'queue' && newRequests.length > 0 && (
+        <button className="banner" onClick={() => go('/physio/requests')}>
+          <span className="ai-avatar"><Inbox size={16} /></span>
+          <span><strong>{newRequests.length} new patient request{newRequests.length > 1 ? 's' : ''}</strong> waiting for you</span>
+          <ArrowRight size={16} />
+        </button>
+      )}
+
+      {view === 'queue' && <section className="care-overview" aria-label="Overview">
         <div className="care-stat"><div className="care-stat-icon amber"><AlertCircle size={17} /></div><span>Waiting for review</span><strong>{queue.data ? sessions.length : '—'}</strong><small>flagged sessions</small></div>
         <div className="care-stat"><div className="care-stat-icon red"><AlertCircle size={17} /></div><span>Urgent</span><strong>{queue.data ? urgentCount : '—'}</strong><small>pain or red-flag words</small></div>
         <div className="care-stat"><div className="care-stat-icon blue"><Users size={17} /></div><span>Your patients</span><strong>{patients.data ? patientList.length : '—'}</strong><small>with a plan or sessions</small></div>
         <div className="care-stat"><div className="care-stat-icon green"><Inbox size={17} /></div><span>New requests</span><strong>{intakes.data ? newRequests.length : '—'}</strong><small>patients asking for care</small></div>
-      </section>
+      </section>}
 
-      {newRequests.length > 0 && (
-        <Panel title="New patient requests" subtitle="Assigned to you by specialty. Written up by the AI assistant from what the patient said.">
+      {view === 'requests' && newRequests.length === 0 && (
+        <Panel><div className="empty-state"><Inbox size={24} /><p>No new requests.</p><small>When a patient describes their problem to the AI assistant, their request appears here.</small></div></Panel>
+      )}
+      {view === 'requests' && newRequests.length > 0 && (
+        <Panel title={`${newRequests.length} waiting`} subtitle="Assigned to you by specialty. Written up by the AI assistant from what the patient said.">
           <div className="request-list">
             {newRequests.map((intake) => (
               <IntakeCard key={intake.id} intake={intake} onError={setDecisionError}
@@ -52,7 +67,7 @@ export default function PhysioQueue() {
         </Panel>
       )}
 
-      <Panel title={`${queue.data?.length ?? '—'} sessions waiting`} action={
+      {view === 'queue' && <Panel title={`${queue.data?.length ?? '—'} sessions waiting`} action={
         <div className="queue-filters" role="group" aria-label="Filter review queue">
           {[['all', 'All'], ['urgent', 'Urgent'], ['form', 'Movement']].map(([value, label]) => (
             <button key={value} className={filter === value ? 'on' : ''} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>
@@ -86,9 +101,9 @@ export default function PhysioQueue() {
             </button>
           ))}
         </div>
-      </Panel>
+      </Panel>}
 
-      <Panel title="Patients" subtitle="Open a patient to review their trend and adjust their plan.">
+      {view === 'patients' && <Panel title={`${patientList.length} patients`} subtitle="Open a patient to review their trend and adjust their plan.">
         <div className="patient-grid">
           {patients.data?.map((p) => (
             <button key={p.id} className="patient-card" onClick={() => go(`/physio/patient/${p.id}`)}>
@@ -96,12 +111,12 @@ export default function PhysioQueue() {
               <div>
                 <strong>{p.name}</strong>
                 <span>{p.protocol ? `${p.protocol.target_reps} × ${exerciseName(p.protocol.exercise).toLowerCase()} · plan v${p.protocol.version}` : 'No plan yet'}</span>
-                <span>Last session {fmtDateTime(p.last_session_at)} · {p.sessions_awaiting_review} awaiting review</span>
+                <span>{p.last_session_at ? `Last session ${fmtDateTime(p.last_session_at)}` : 'No sessions yet'} · {p.sessions_awaiting_review} awaiting review</span>
               </div>
             </button>
           ))}
         </div>
-      </Panel>
+      </Panel>}
     </div>
   );
 }
