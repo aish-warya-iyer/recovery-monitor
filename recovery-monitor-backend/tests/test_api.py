@@ -104,3 +104,81 @@ def test_legacy_check_in_no_longer_crashes(client):
 def test_eval_summary_has_measured_numbers(client):
     e = client.get("/api/eval/summary").json()
     assert e["angle_accuracy"]["per_frame"]["side"]["mae_deg"] < 10
+
+
+def test_authenticated_patient_therapist_intake_flow(client):
+    patient = client.post("/api/auth/signup", json={
+        "email": "workflow-patient@example.com",
+        "password": "development-password",
+        "role": "patient",
+    })
+    assert patient.status_code == 201
+    patient_user = patient.json()["user"]
+
+    onboard = client.put("/api/onboarding/patient", json={
+        "name": "Workflow Patient",
+        "affected_areas": ["knee"],
+        "goals": ["improve_strength"],
+        "consent_local_analysis": True,
+    })
+    assert onboard.status_code == 200
+
+    intake = client.post("/api/patient/intakes", json={
+        "affected_areas": ["knee"],
+        "issue_types": ["pain_during_movement"],
+        "when_it_happens": ["during_movement"],
+        "pain_score": 3,
+        "duration": "one_to_three_months",
+        "trend": "unchanged",
+        "limitations": [],
+        "goals": ["improve_strength"],
+        "notes": "Squats feel difficult after a long day.",
+    })
+    assert intake.status_code == 201
+    intake_id = intake.json()["id"]
+
+    client.cookies.clear()
+    therapist = client.post("/api/auth/signup", json={
+        "email": "workflow-therapist@example.com",
+        "password": "development-password",
+        "role": "therapist",
+    })
+    assert therapist.status_code == 201
+    therapist_user = therapist.json()["user"]
+    assert client.put("/api/onboarding/therapist", json={
+        "name": "Workflow Therapist",
+        "specializations": ["lower_body"],
+        "supported_exercises": ["squat"],
+    }).status_code == 200
+
+    requests = client.get("/api/therapist/intakes").json()
+    assert any(item["id"] == intake_id for item in requests)
+    accepted = client.post(f"/api/therapist/intakes/{intake_id}/claim")
+    assert accepted.status_code == 200
+    assert accepted.json()["assigned_therapist_id"] == therapist_user["id"]
+
+    plan = client.post(f"/api/therapist/intakes/{intake_id}/plan", json={
+        "exercise": "squat",
+        "target_reps": 8,
+        "target_sets": 2,
+        "target_depth_deg": 95,
+        "pain_threshold": 5,
+        "instructions": "Use a side view and stop if pain increases.",
+    })
+    assert plan.status_code == 201
+    plan_id = plan.json()["id"]
+    assert client.post(f"/api/therapist/plans/{plan_id}/approve", json={"notes": "Approved for testing."}).status_code == 200
+
+    client.cookies.clear()
+    assert client.post("/api/auth/login", json={
+        "email": "workflow-patient@example.com",
+        "password": "development-password",
+    }).status_code == 200
+    care_team = client.get("/api/patient/care-team")
+    assert care_team.status_code == 200
+    assert care_team.json()["therapist"] == {
+        "id": therapist_user["id"],
+        "email": "workflow-therapist@example.com",
+        "name": "Workflow Therapist",
+    }
+    assert client.get("/api/patient/intakes").json()[0]["status"] == "approved"
