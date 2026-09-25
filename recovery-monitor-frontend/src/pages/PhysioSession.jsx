@@ -1,11 +1,11 @@
-import { ArrowLeft, Check, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Check, Mic, RotateCcw } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
-import AiReport from '../components/AiReport.jsx';
+import AiReport, { AGREEMENT } from '../components/AiReport.jsx';
 import RepList from '../components/RepList.jsx';
 import { exerciseName } from '../exercises.js';
 import SessionPlayer from '../components/SessionPlayer.jsx';
-import { ErrorNote, FlagBadge, Note, Panel, Stat } from '../components/ui.jsx';
+import { Disclosure, ErrorNote, FlagBadge, Note, Panel, Stat } from '../components/ui.jsx';
 import { fmtDateTime, go, num, pct, useLoad } from '../hooks.js';
 
 export default function PhysioSession({ sessionId }) {
@@ -68,99 +68,120 @@ export default function PhysioSession({ sessionId }) {
   if (session.error) return <div className="page"><ErrorNote error={session.error} /></div>;
   if (!s) return <div className="page"><p className="muted">Loading…</p></div>;
 
+  const flaggedReps = r?.reps?.filter((x) => !x.predicted_correct).length ?? 0;
+  const [agreeCls, agreeLabel] = s.report ? (AGREEMENT[s.report.agreement] ?? AGREEMENT.not_enough_info) : ['badge-grey', 'Report pending'];
+  const reasons = s.flag?.reasons ?? [];
+
   return (
-    <div className="page">
+    <div className="page session-review">
       <button className="text-button back" onClick={() => go('/physio')}><ArrowLeft size={14} /> Review queue</button>
       <header className="page-heading">
         <div>
-          <span className="eyebrow">Session review</span>
-          <h1>{patient.data?.name ?? s.patient_id} · {fmtDateTime(s.created_at)}</h1>
-          <p className="page-subtitle">
-            {exerciseName(r?.exercise ?? s.exercise)} · {r?.model?.classifier
-              ? `compared with ${r.model.baseline_reps} approved reps from earlier sessions`
-              : 'no approved baseline yet: video model and rules only'}
-          </p>
+          <span className="eyebrow">Session review · {fmtDateTime(s.created_at)}</span>
+          <h1>{patient.data?.name ?? s.patient_id}</h1>
+          <p className="page-subtitle">{exerciseName(r?.exercise ?? s.exercise)}</p>
         </div>
         <FlagBadge flag={s.flag} />
       </header>
 
-      {s.flag?.reasons?.length > 0 && (
-        <Note tone={s.flag.severity === 'urgent' ? 'error' : 'warn'}>
-          <strong>Why this was flagged</strong>
-          <ul>{s.flag.reasons.map((x) => <li key={x}>{x}</li>)}</ul>
-        </Note>
-      )}
+      <div className="glance">
+        <div className="glance-tile">
+          <span>Reps</span>
+          <strong>{r ? r.repetitions : '—'}<small> / {r?.protocol?.target_reps ?? '—'}</small></strong>
+        </div>
+        <div className={`glance-tile ${flaggedReps ? 'amber' : 'green'}`}>
+          <span>Need a look</span>
+          <strong>{r ? flaggedReps : '—'}<small> rep{flaggedReps === 1 ? '' : 's'}</small></strong>
+        </div>
+        <div className={`glance-tile ${painHigh ? 'red' : ''}`}>
+          <span>Pain</span>
+          <strong>{s.check_in ? s.check_in.pain_score : '—'}<small> / 10</small></strong>
+        </div>
+        <div className="glance-tile">
+          <span>Voice vs video</span>
+          <span className={`badge ${agreeCls}`}>{agreeLabel}</span>
+        </div>
+      </div>
 
-      {r?.vlm?.available && (
-        <Note tone={r.vlm.mismatch ? 'warn' : 'info'}>
-          Our fine-tuned video model sees <strong>{exerciseName(r.vlm.detected_exercise).toLowerCase()}</strong>
-          {' '}({Math.round((r.vlm.confidence ?? 0) * 100)}% of windows), camera {String(r.vlm.view ?? 'unknown').replace('_', ' ')}.
-          {r.vlm.mismatch && <> The plan is <strong>{exerciseName(r.vlm.planned_exercise).toLowerCase()}</strong>, so this was analysed as what was actually done.</>}
+      {(reasons.length > 0 || r?.vlm?.mismatch) && (
+        <Note tone={s.flag?.severity === 'urgent' ? 'error' : 'warn'}>
+          <strong>{reasons[0] ?? 'Different exercise detected'}</strong>
+          {reasons.length > 1 && <ul>{reasons.slice(1).map((x) => <li key={x}>{x}</li>)}</ul>}
+          {r?.vlm?.mismatch && (
+            <p className="note-line">The plan is <b>{exerciseName(r.vlm.planned_exercise).toLowerCase()}</b>, but our video model sees
+              {' '}<b>{exerciseName(r.vlm.detected_exercise).toLowerCase()}</b>, so it was analysed as what was actually done.</p>
+          )}
         </Note>
       )}
 
       <div className="review-layout">
         <div>
-          <Panel title="Movement" subtitle="Click a rep or the chart to jump there · J / K for next / previous rep">
+          <Panel title="Movement" subtitle="Click a rep or the chart to jump there · J / K next / previous rep">
             <SessionPlayer ref={player} session={s} selectedRep={selected} />
+            {r && (
+              <Disclosure label="Measurements and how this was analysed" openLabel="Hide measurements">
+                <div className="stats-row">
+                  {r.exercise === 'squat' || !r.exercise ? (
+                    <>
+                      <Stat label="Reached target depth" value={`${r.metrics?.reps_reaching_target ?? 0}`} sub={`target ${r.protocol?.target_depth_deg ?? '—'}°`} />
+                      <Stat label="Median depth" value={num(r.metrics?.median_depth_deg, 0, '°')} />
+                    </>
+                  ) : (
+                    <>
+                      <Stat label={r.measure_label ?? 'Peak'} value={num(r.metrics?.peak_deg, 0, '°')} sub="best rep" />
+                      <Stat label="Median range" value={num(r.metrics?.median_range_deg, 0, '°')} />
+                    </>
+                  )}
+                  <Stat label="Tracking confidence" value={pct(r.confidence)} sub={`camera: ${r.quality?.view?.replace('_', ' ') ?? '—'}`} />
+                </div>
+                <ul className="method-list">
+                  <li>{r.model?.classifier
+                    ? `Compared with ${r.model.baseline_reps} approved reps from this patient's earlier sessions.`
+                    : 'No approved baseline yet: video model and rules only.'}</li>
+                  {r.vlm?.available && (
+                    <li>Fine-tuned video model sees {exerciseName(r.vlm.detected_exercise).toLowerCase()} ({Math.round((r.vlm.confidence ?? 0) * 100)}% of
+                      windows), camera {String(r.vlm.view ?? 'unknown').replace('_', ' ')}.</li>
+                  )}
+                </ul>
+              </Disclosure>
+            )}
           </Panel>
-          {r && (
-            <Panel title="Session numbers">
-              <div className="stats-row">
-                <Stat label="Reps" value={`${r.repetitions} / ${r.protocol?.target_reps ?? '—'}`} />
-                {r.exercise === 'squat' || !r.exercise ? (
-                  <>
-                    <Stat label="Reached target depth" value={`${r.metrics?.reps_reaching_target ?? 0}`} sub={`target ${r.protocol?.target_depth_deg ?? '—'}°`} />
-                    <Stat label="Median depth" value={num(r.metrics?.median_depth_deg, 0, '°')} />
-                  </>
-                ) : (
-                  <>
-                    <Stat label={r.measure_label ?? 'Peak'} value={num(r.metrics?.peak_deg, 0, '°')} sub="best rep" />
-                    <Stat label="Median range" value={num(r.metrics?.median_range_deg, 0, '°')} />
-                  </>
-                )}
-                <Stat label="Tracking confidence" value={pct(r.confidence)} sub={`camera: ${r.quality?.view?.replace('_', ' ') ?? '—'}`} />
-              </div>
-            </Panel>
-          )}
-        </div>
 
-        <div>
-          <Panel title="Reps" subtitle="The model's view; your call overrides it and teaches future comparisons">
+          <Panel title="Reps" subtitle="Select a rep to see why. Your call overrides the model and teaches future comparisons.">
             <RepList reps={r?.reps} physio measure={r?.exercise === 'squat' ? 'Depth' : (r?.measure_label ?? 'Peak')}
               selected={selected} onSelect={selectRep} labels={labels}
               onLabel={(i, v) => setLabels((l) => ({ ...l, [i]: v }))} />
           </Panel>
+        </div>
 
+        <div>
           <AiReport session={s} onUpdated={session.reload} />
 
           <Panel title="Patient check-in">
             {s.check_in ? (
-              <>
-                <div className="stats-row">
-                  <Stat label="Pain" value={`${s.check_in.pain_score}/10`} tone={painHigh ? 'red' : ''}
-                    sub={`plan threshold ${s.protocol?.pain_threshold ?? '—'}`} />
-                  <Stat label="Stiffness" value={s.check_in.stiffness ? 'Yes' : 'No'} />
+              <div className="checkin">
+                <div className="report-chips">
+                  <span className={`badge ${painHigh ? 'badge-red' : 'badge-grey'}`}>Pain {s.check_in.pain_score}/10 · alert at {s.protocol?.pain_threshold ?? '—'}</span>
+                  <span className="badge badge-grey">{s.check_in.stiffness ? 'Stiff' : 'No stiffness'}</span>
                 </div>
-                {s.check_in.transcript && <blockquote>🎤 “{s.check_in.transcript}”</blockquote>}
+                {s.check_in.transcript && <blockquote><Mic size={13} /> “{s.check_in.transcript}”</blockquote>}
                 {s.check_in.comment && <blockquote>“{s.check_in.comment}”</blockquote>}
-              </>
+              </div>
             ) : <p className="muted small">No check-in yet.</p>}
           </Panel>
 
-          <Panel title="Your decision">
+          <Panel title="Your decision" className="decision-panel">
             <label className="field">
               <span>Note to the patient</span>
-              <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)}
+              <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
                 placeholder="e.g. Slow down on the way down and keep your knees behind your toes." />
             </label>
-            <label className="field">
-              <span>Reference video to send</span>
-              <select value={refId} onChange={(e) => setRefId(e.target.value ? Number(e.target.value) : '')}>
+            <Disclosure label={refId ? 'Reference video attached' : 'Attach a reference video'} openLabel="Reference video">
+              <select aria-label="Reference video to send" value={refId} onChange={(e) => setRefId(e.target.value ? Number(e.target.value) : '')}>
                 <option value="">None</option>
                 {refs.data?.map((v) => <option key={v.id} value={v.id}>{v.title}</option>)}
               </select>
-            </label>
+            </Disclosure>
             {painHigh && (
               <label className="check warn">
                 <input type="checkbox" checked={ackPain} onChange={(e) => setAckPain(e.target.checked)} />
@@ -176,8 +197,10 @@ export default function PhysioSession({ sessionId }) {
               </button>
             </div>
             <ErrorNote error={submit.error} />
-            {s.review && <p className="muted small">Last decision: {s.review.decision.replace('_', ' ')} on {fmtDateTime(s.review.created_at)}</p>}
-            <p className="muted small">Approving makes this session's reps part of the patient's baseline for future comparisons.</p>
+            <p className="muted small">
+              {s.review && <>Last decision: {s.review.decision.replace('_', ' ')} on {fmtDateTime(s.review.created_at)}. </>}
+              Approving adds these reps to the patient's baseline.
+            </p>
           </Panel>
         </div>
       </div>

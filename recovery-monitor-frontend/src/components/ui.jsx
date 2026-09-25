@@ -1,4 +1,5 @@
-import { AlertTriangle, CircleCheck, Info } from 'lucide-react';
+import { AlertTriangle, ChevronDown, CircleCheck, Info } from 'lucide-react';
+import { useId, useState } from 'react';
 
 export function Panel({ title, subtitle, action, children, className = '' }) {
   return (
@@ -71,4 +72,21 @@ export function Disclaimer() {
 export function Initials({ name }) {
   const s = (name || '?').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
   return <span className="initials">{s}</span>;
+}
+
+// Progressive disclosure: a summary stays visible, details open on request (animated, reduced-motion safe).
+export function Disclosure({ label, openLabel, children, defaultOpen = false, className = '' }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const id = useId();
+  return (
+    <div className={`disclosure ${open ? 'open' : ''} ${className}`}>
+      <button type="button" className="disclosure-toggle" aria-expanded={open} aria-controls={id} onClick={() => setOpen((o) => !o)}>
+        <span>{open ? (openLabel ?? label) : label}</span>
+        <ChevronDown size={15} className="disclosure-chevron" />
+      </button>
+      <div id={id} className="disclosure-body" inert={!open}>
+        <div className="disclosure-inner">{children}</div>
+      </div>
+    </div>
+  );
 }
