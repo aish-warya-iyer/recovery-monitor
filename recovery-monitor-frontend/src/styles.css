@@ -666,3 +666,7 @@ blockquote { margin: 0; padding: 8px 12px; border-left: 3px solid #cdbfea; color
 .auth-shell { min-height: 100vh; padding: 40px 24px; background: var(--bg); }
 
 .intake-empty small { color: var(--muted); }
+
+.approved-plan-summary { display: grid; gap: 5px; }
+.approved-plan-summary strong { font-size: 17px; }
+.approved-plan-summary span, .approved-plan-summary small { color: var(--muted); font-size: 13px; }

@@ -14,9 +14,12 @@ export default function PatientHome({ patientId }) {
   const latest = useLoad(() => (latestId ? api.session(latestId) : Promise.resolve(null)), [latestId]);
   const refs = useLoad(() => api.referenceVideos(), []);
   const careTeam = useLoad(() => api.patientCareTeam(), []);
+  const intakes = useLoad(() => api.patientIntakes(), []);
 
   const protocol = patient.data?.protocol;
-  const refVideo = refs.data?.find((r) => r.id === (latest.data?.review?.reference_video_id ?? protocol?.reference_video_id));
+  const approvedIntake = intakes.data?.find((intake) => intake.status === 'approved' && intake.plan);
+  const carePlan = protocol ?? approvedIntake?.plan;
+  const refVideo = refs.data?.find((r) => r.id === (latest.data?.review?.reference_video_id ?? carePlan?.reference_video_id));
   const refresh = () => {
     history.reload();
     latest.reload();
@@ -43,18 +46,21 @@ export default function PatientHome({ patientId }) {
         </div>
         <div className={`patient-status ${needsReview ? 'review' : ''}`}><span /> {status}</div>
       </header>
-      <ErrorNote error={patient.error || history.error} />
+      <ErrorNote error={patient.error || history.error || intakes.error} />
       <Panel title="Your therapist" subtitle="Your care connection" className="care-team-panel">
         {careTeam.data?.therapist ? <div className="care-team-person"><strong>{careTeam.data.therapist.name}</strong><span>{careTeam.data.therapist.email}</span><small>Your therapist can review your movement and approve plans.</small></div> : <Note>Your therapist will appear here after someone accepts your care request.</Note>}
       </Panel>
+
+      {approvedIntake?.plan && !protocol && <Panel title="Therapist-approved plan" subtitle="Your therapist has approved this plan from your request."><div className="approved-plan-summary"><strong>{approvedIntake.plan.exercise === 'squat' ? 'Squats' : approvedIntake.plan.exercise}</strong><span>{approvedIntake.plan.target_sets} sets · {approvedIntake.plan.target_reps} repetitions · pain alert at {approvedIntake.plan.pain_threshold}/10</span>{approvedIntake.plan.instructions && <small>{approvedIntake.plan.instructions}</small>}</div></Panel>}
+      {intakes.data?.some((intake) => intake.status === 'pending') && !approvedIntake && <Note>Your therapist request is waiting for a therapist to review it.</Note>}
 
       <section className="patient-overview" aria-label="Your recovery overview">
         <div className="overview-card overview-next">
           <div className="overview-icon"><Activity size={17} /></div>
           <span className="overview-label">Next step</span>
-          <strong>{protocol ? `${protocol.target_reps} ${protocol.exercise === 'squat' ? 'squats' : 'reps'}` : 'Set your plan'}</strong>
-          <p>{protocol ? `Aim for ${protocol.target_depth_deg}° depth, then tell your physiotherapist how it felt.` : 'Your physiotherapist will add an exercise plan here.'}</p>
-          {protocol && <button type="button" className="overview-link" onClick={() => document.getElementById('record-session')?.scrollIntoView({ behavior: 'smooth' })}>Record a session <ArrowRight size={14} /></button>}
+          <strong>{carePlan ? `${carePlan.target_reps} ${carePlan.exercise === 'squat' ? 'squats' : 'reps'}` : 'Set your plan'}</strong>
+          <p>{carePlan ? `Aim for ${carePlan.target_depth_deg ?? 'your'}° depth, then tell your physiotherapist how it felt.` : 'Your physiotherapist will add an exercise plan here.'}</p>
+          {carePlan && <button type="button" className="overview-link" onClick={() => document.getElementById('record-session')?.scrollIntoView({ behavior: 'smooth' })}>Record a session <ArrowRight size={14} /></button>}
         </div>
         <div className="overview-card">
           <div className="overview-icon calm"><CheckCircle2 size={17} /></div>
@@ -73,7 +79,7 @@ export default function PatientHome({ patientId }) {
       <section className="patient-workflow" aria-label="Your session workflow">
         <div className="workflow-heading"><span className="eyebrow">Your workflow</span><span className="muted small">One step at a time</span></div>
         <div className="workflow-steps">
-          <div className="workflow-step current"><span className="workflow-number">1</span><div><strong>Follow your plan</strong><small>{protocol ? `${protocol.target_reps} ${protocol.exercise === 'squat' ? 'squats' : 'repetitions'} assigned today` : 'Wait for your plan'}</small></div></div>
+          <div className="workflow-step current"><span className="workflow-number">1</span><div><strong>Follow your plan</strong><small>{carePlan ? `${carePlan.target_reps} ${carePlan.exercise === 'squat' ? 'squats' : 'repetitions'} assigned today` : 'Wait for your plan'}</small></div></div>
           <ArrowRight className="workflow-arrow" size={16} />
           <div className="workflow-step"><span className="workflow-number">2</span><div><strong>Record movement</strong><small>Use your camera or upload a video</small></div></div>
           <ArrowRight className="workflow-arrow" size={16} />
@@ -82,16 +88,16 @@ export default function PatientHome({ patientId }) {
       </section>
 
       <div className="grid-2" id="record-session">
-        <Panel title="Today's exercise" subtitle={protocol ? `Plan version ${protocol.version}, set ${fmtDate(protocol.created_at)} by your physiotherapist` : ''}>
-          {protocol ? (
+        <Panel title="Today's exercise" subtitle={carePlan ? `Plan version ${carePlan.version ?? 1}, set ${fmtDate(carePlan.created_at)} by your physiotherapist` : ''}>
+          {carePlan ? (
             <>
               <div className="stats-row">
-                <Stat label="Exercise" value={protocol.exercise === 'squat' ? 'Squats' : 'Leg extension'} />
-                <Stat label="Repetitions" value={protocol.target_reps} />
-                <Stat label="Target depth" value={`${protocol.target_depth_deg}°`} sub="knee angle at the bottom" />
+                <Stat label="Exercise" value={carePlan.exercise === 'squat' ? 'Squats' : 'Leg extension'} />
+                <Stat label="Repetitions" value={carePlan.target_reps} />
+                <Stat label="Target depth" value={`${carePlan.target_depth_deg}°`} sub="knee angle at the bottom" />
               </div>
-              {protocol.tempo && <p className="plan-line"><CalendarCheck size={14} /> {protocol.tempo}</p>}
-              {protocol.notes && <p className="plan-line"><MessageSquareText size={14} /> {protocol.notes}</p>}
+              {carePlan.tempo && <p className="plan-line"><CalendarCheck size={14} /> {carePlan.tempo}</p>}
+              {carePlan.notes && <p className="plan-line"><MessageSquareText size={14} /> {carePlan.notes}</p>}
               {refVideo && (
                 <div className="reference">
                   <span className="mini-label"><PlayCircle size={13} /> How it should look: {refVideo.title}</span>
@@ -100,7 +106,7 @@ export default function PatientHome({ patientId }) {
               )}
             </>
           ) : (
-            <Note>Your physiotherapist hasn't set a plan yet.</Note>
+            <Note>{approvedIntake ? 'Your approved plan is ready below.' : 'Your physiotherapist has not set a plan yet.'}</Note>
           )}
         </Panel>
 
@@ -112,7 +118,7 @@ export default function PatientHome({ patientId }) {
       {latest.data && <LatestSession session={latest.data} patientId={patientId} refVideo={refVideo} onSaved={refresh} />}
 
       <Panel title="Your progress" subtitle="From your analysed sessions">
-        <TrendChart sessions={history.data} targetDepth={protocol?.target_depth_deg} />
+        <TrendChart sessions={history.data} targetDepth={carePlan?.target_depth_deg} />
       </Panel>
       <Disclaimer />
     </div>

@@ -39,6 +39,7 @@ export const api = {
   authLogout: () => request('/api/auth/logout', { method: 'POST' }),
   patientCareTeam: () => request('/api/patient/care-team'),
   createIntake: (data) => request('/api/patient/intakes', json('POST', data)),
+  patientIntakes: () => request('/api/patient/intakes'),
   therapistIntakes: () => request('/api/therapist/intakes'),
   claimIntake: (id) => request("/api/therapist/intakes/" + id + "/claim", { method: "POST" }),
   declineIntake: (id) => request("/api/therapist/intakes/" + id + "/decline", { method: "POST" }),
