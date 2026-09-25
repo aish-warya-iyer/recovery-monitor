@@ -39,7 +39,9 @@ export default function App() {
     return () => { alive = false; };
   }, [area]);
   const checked = auth.checkedFor === area;
-  const user = checked ? auth.user : me.data?.user;
+  // Only the check for THIS page counts: a stale answer (e.g. the previous account right after switching users)
+  // must never drive a redirect.
+  const user = checked ? auth.user : null;
 
   // Page guard (the server enforces the same rules): signed-out users go to sign-in, patients only see their
   // own portal, therapists use the care-team pages.
@@ -110,7 +112,7 @@ export default function App() {
       </aside>
 
       <main className="main-shell">
-        <Topbar health={h} user={me.data?.user} crumbs={crumbs} />
+        <Topbar health={h} user={me.data?.user && { ...me.data.user, name: me.data.profile?.name }} crumbs={crumbs} />
         <div className="content">{page}</div>
       </main>
     </div>

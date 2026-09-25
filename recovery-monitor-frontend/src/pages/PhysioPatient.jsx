@@ -1,4 +1,4 @@
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Mic, Save, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import TrendChart from '../components/TrendChart.jsx';
@@ -10,6 +10,8 @@ export default function PhysioPatient({ patientId }) {
   const patient = useLoad(() => api.patient(patientId), [patientId]);
   const history = useLoad(() => api.patientSessions(patientId), [patientId]);
   const refs = useLoad(() => api.referenceVideos(), []);
+  const intakes = useLoad(() => api.therapistIntakes().catch(() => []), [patientId]);
+  const intake = intakes.data?.find((i) => i.patient_user_id === patientId);
   const protocol = patient.data?.protocol;
 
   return (
@@ -23,13 +25,14 @@ export default function PhysioPatient({ patientId }) {
         </div>
       </header>
       <ErrorNote error={patient.error} />
+      {intake && <IntakeNote intake={intake} />}
 
       <div className="grid-2">
         <Panel title="Recovery trend">
           <TrendChart sessions={history.data} targetDepth={protocol?.target_depth_deg} />
         </Panel>
         <Panel title="Exercise plan" subtitle={protocol ? `Version ${protocol.version} · ${fmtDateTime(protocol.created_at)}` : 'No plan yet'}>
-          <ProtocolEditor patientId={patientId} protocol={protocol} refs={refs.data} onSaved={patient.reload} />
+          <ProtocolEditor patientId={patientId} protocol={protocol} refs={refs.data} onSaved={patient.reload} suggested={intake?.ai?.suggested_exercise} />
         </Panel>
       </div>
 
@@ -55,13 +58,14 @@ export default function PhysioPatient({ patientId }) {
   );
 }
 
-function ProtocolEditor({ patientId, protocol, refs, onSaved }) {
-  const blank = { exercise: 'squat', target_reps: 10, target_depth_deg: 100, pain_threshold: 5, tempo: '', notes: '', reference_video_id: null };
+function ProtocolEditor({ patientId, protocol, refs, onSaved, suggested }) {
+  const blank = { exercise: suggested || 'squat', target_reps: 10, target_depth_deg: 100, pain_threshold: 5, tempo: '', notes: '', reference_video_id: null };
   const [form, setForm] = useState(blank);
   const [state, setState] = useState({ saving: false, error: null, saved: false });
   useEffect(() => {
     if (protocol) setForm({ ...blank, ...protocol });
-  }, [protocol?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    else if (suggested) setForm((f) => ({ ...f, exercise: suggested }));
+  }, [protocol?.id, suggested]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === 'number' ? Number(e.target.value) : e.target.value }));
 
@@ -109,5 +113,38 @@ function ProtocolEditor({ patientId, protocol, refs, onSaved }) {
       {state.saved && <Note tone="ok">Saved. The patient sees the new plan next time they open the app.</Note>}
       <ErrorNote error={state.error} />
     </div>
+  );
+}
+
+const DURATION = { less_than_two_weeks: 'under 2 weeks', two_to_six_weeks: '2–6 weeks', one_to_three_months: '1–3 months',
+  more_than_three_months: 'over 3 months', unknown: 'duration not given' };
+const MOOD = { calm: 'Calm', hopeful: 'Hopeful', worried: 'Worried', frustrated: 'Frustrated', in_pain: 'In pain' };
+const TREND = { improving: 'getting better', unchanged: 'about the same', getting_worse: 'getting worse', unknown: 'trend not given' };
+
+// What the patient told the intake assistant, so the plan starts from their own words.
+function IntakeNote({ intake }) {
+  const ai = intake.ai;
+  return (
+    <Panel className="intake-note" title={<><span className="ai-mark"><Sparkles size={14} /></span> What the patient told us</>}
+      subtitle={`Care request · ${fmtDateTime(intake.created_at)}${ai?.model ? ` · summarised by ${ai.model} on this device` : ''}`}>
+      <div className="intake-note-grid">
+        <div>
+          {ai?.summary_for_therapist && <p className="report-headline">{ai.summary_for_therapist}</p>}
+          {intake.voice_transcript && <blockquote><Mic size={13} /> “{intake.voice_transcript}”</blockquote>}
+          {!ai && intake.notes && <p>{intake.notes}</p>}
+        </div>
+        <div className="intake-facts">
+          <div><span>Pain</span><strong>{intake.pain_score}/10</strong></div>
+          <div><span>How long</span><strong>{DURATION[intake.duration] ?? intake.duration}</strong></div>
+          <div><span>Lately</span><strong>{TREND[intake.trend] ?? intake.trend}</strong></div>
+          {ai?.mood && <div><span>Mood</span><strong>{MOOD[ai.mood] ?? ai.mood}</strong></div>}
+          {ai?.suggested_exercise && <div><span>AI suggests</span><strong>{EXERCISES[ai.suggested_exercise]?.name ?? ai.suggested_exercise}</strong></div>}
+        </div>
+      </div>
+      {ai?.red_flags?.length > 0 && <Note tone="error"><strong>Red flags (fixed rules):</strong> {ai.red_flags.join(' · ')}</Note>}
+      {ai?.follow_up_questions?.length > 0 && (
+        <div className="report"><section><h4>Questions to ask</h4><ul>{ai.follow_up_questions.map((q) => <li key={q}>{q}</li>)}</ul></section></div>
+      )}
+    </Panel>
   );
 }
