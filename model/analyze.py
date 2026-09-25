@@ -344,7 +344,9 @@ def render_annotated(video_path: str, lm: dict, result: dict, out_path: str, max
          "-crf", "26", "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(out_path)],
         stdin=subprocess.PIPE)
     image = lm["image"]
-    hip, knee, ankle = SIDES[result["metrics"]["side"]][1:4]
+    side = result["metrics"].get("side")
+    highlight = SIDES[side][1:4] if result.get("exercise", "squat") == "squat" and side in SIDES else None
+    label = result["angle_series"].get("label", "Knee angle").split(" (")[0]
     reps = result["reps"]
     series_t = np.array(result["angle_series"]["t"])
     series_k = result["angle_series"]["knee"]
@@ -360,9 +362,11 @@ def render_annotated(video_path: str, lm: dict, result: dict, out_path: str, max
                 xy = lambda j: (int(pts[j, 0] * size[0]), int(pts[j, 1] * size[1]))  # noqa: E731
                 for a, b in _BONES:
                     cv2.line(frame, xy(a), xy(b), (230, 230, 230), 2, cv2.LINE_AA)
-                for a, b in ((hip, knee), (knee, ankle)):
-                    cv2.line(frame, xy(a), xy(b), (60, 200, 255), 4, cv2.LINE_AA)
-                cv2.circle(frame, xy(knee), 7, (60, 200, 255), -1, cv2.LINE_AA)
+                if highlight:
+                    hip, knee, ankle = highlight
+                    for a, b in ((hip, knee), (knee, ankle)):
+                        cv2.line(frame, xy(a), xy(b), (60, 200, 255), 4, cv2.LINE_AA)
+                    cv2.circle(frame, xy(knee), 7, (60, 200, 255), -1, cv2.LINE_AA)
             done = sum(r["end_frame"] <= i for r in reps)
             current = next((r for r in reps if r["start_frame"] <= i <= r["end_frame"]), None)
             ang = series_k[int(np.abs(series_t - i / fps).argmin())] if len(series_t) else None
@@ -370,8 +374,8 @@ def render_annotated(video_path: str, lm: dict, result: dict, out_path: str, max
             if review:
                 cv2.rectangle(frame, (0, 0), (size[0] - 1, size[1] - 1), (0, 170, 255), 10)
             cv2.rectangle(frame, (0, 0), (size[0], 44), (30, 30, 30), -1)
-            label = f"Reps {done}/{len(reps)}" + (f"   Knee {ang:.0f} deg" if ang is not None else "")
-            cv2.putText(frame, label + ("   REVIEW" if review else ""), (12, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8,
+            text = f"Reps {done}/{len(reps)}" + (f"   {label} {ang:.0f} deg" if ang is not None else "")
+            cv2.putText(frame, text + ("   REVIEW" if review else ""), (12, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8,
                         (255, 255, 255), 2, cv2.LINE_AA)
             ff.stdin.write(frame.tobytes())
             i += 1
