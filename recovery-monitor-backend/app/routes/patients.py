@@ -1,10 +1,11 @@
 """Patients and their protocol versions (#35). A protocol change creates a new version; the latest
 version is the current plan."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from app import db
+from app.auth import require_patient_access, require_therapist
 from app.routes.common import session_summary
 
 router = APIRouter(prefix="/api/patients", tags=["patients"])
@@ -41,7 +42,8 @@ def _patient_or_404(patient_id: str) -> dict:
 
 
 @router.get("")
-def list_patients():
+def list_patients(request: Request):
+    require_therapist(request)
     out = []
     for p in db.all_("SELECT * FROM patients ORDER BY name"):
         last = db.one("SELECT created_at FROM sessions WHERE patient_id = ? ORDER BY created_at DESC LIMIT 1", p["id"])
@@ -53,7 +55,8 @@ def list_patients():
 
 
 @router.post("", status_code=201)
-def create_patient(body: PatientIn):
+def create_patient(body: PatientIn, request: Request):
+    require_therapist(request)
     import uuid
 
     pid = body.id or uuid.uuid4().hex[:8]
@@ -62,28 +65,32 @@ def create_patient(body: PatientIn):
     with db.tx() as c:
         c.execute("INSERT INTO patients (id, name, condition, created_at) VALUES (?,?,?,?)",
                   (pid, body.name, body.condition, db.now()))
-    return get_patient(pid)
+    return {**_patient_or_404(pid), "protocol": current_protocol(pid)}
 
 
 @router.get("/{patient_id}")
-def get_patient(patient_id: str):
+def get_patient(patient_id: str, request: Request):
+    require_patient_access(request, patient_id)
     return {**_patient_or_404(patient_id), "protocol": current_protocol(patient_id)}
 
 
 @router.get("/{patient_id}/protocol")
-def get_protocol(patient_id: str):
+def get_protocol(patient_id: str, request: Request):
+    require_patient_access(request, patient_id)
     _patient_or_404(patient_id)
     return current_protocol(patient_id)
 
 
 @router.get("/{patient_id}/protocol/history")
-def protocol_history(patient_id: str):
+def protocol_history(patient_id: str, request: Request):
+    require_patient_access(request, patient_id)
     _patient_or_404(patient_id)
     return db.all_("SELECT * FROM protocols WHERE patient_id = ? ORDER BY version DESC", patient_id)
 
 
 @router.post("/{patient_id}/protocol", status_code=201)
-def set_protocol(patient_id: str, body: ProtocolIn):
+def set_protocol(patient_id: str, body: ProtocolIn, request: Request):
+    require_therapist(request)
     _patient_or_404(patient_id)
     if body.reference_video_id and not db.one("SELECT id FROM reference_videos WHERE id = ?", body.reference_video_id):
         raise HTTPException(422, "Unknown reference video")
@@ -98,7 +105,8 @@ def set_protocol(patient_id: str, body: ProtocolIn):
 
 
 @router.get("/{patient_id}/sessions")
-def patient_sessions(patient_id: str):
+def patient_sessions(patient_id: str, request: Request):
+    require_patient_access(request, patient_id)
     """Session history, oldest first, with the numbers the trend chart needs."""
     _patient_or_404(patient_id)
     rows = db.all_("SELECT * FROM sessions WHERE patient_id = ? ORDER BY created_at", patient_id)

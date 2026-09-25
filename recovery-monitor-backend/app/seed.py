@@ -10,7 +10,10 @@ import argparse
 import shutil
 from datetime import datetime, timedelta, timezone
 
+import json
+
 from app import db, jobs
+from app.auth import hash_password, seed_demo_users
 from app.config import DATA_DIR, REFERENCE_DIR, VIDEO_DIR
 from app.video import clip
 
@@ -94,7 +97,45 @@ def main():
                 c.execute("INSERT INTO reviews (session_id, decision, notes, rep_labels_json, reference_video_id, "
                           "reviewer, created_at) VALUES (?,?,?, '{}', ?, 'Physiotherapist', ?)",
                           (sid, decision, note, ref_id, ts))
+    seed_accounts()
     print("done:", db.one("SELECT COUNT(*) n FROM sessions")["n"], "sessions")
+
+
+DEMO_PASSWORD = "recovery-demo"
+# Sign-in accounts for the demo. A patient's user id equals their patient id, which links the login to the
+# movement data. patient.demo@example.com (from seed_demo_users) stays fresh to show onboarding + intake.
+ACCOUNTS = [
+    ("jordan", "jordan@demo.local", "patient", "Jordan Mitchell", ["knee"]),
+    ("sam", "sam@demo.local", "patient", "Sam Rivera", ["knee"]),
+    ("test", "test@demo.local", "patient", "Test Patient", ["knee"]),
+]
+
+
+def seed_accounts():
+    seed_demo_users()
+    now = db.now()
+    with db.tx() as c:
+        c.execute("INSERT OR IGNORE INTO patients (id, name, condition, created_at) VALUES "
+                  "('test', 'Test Patient', 'Real-video testing (our team, not a patient).', ?)", (now,))
+        if not c.execute("SELECT 1 FROM protocols WHERE patient_id='test'").fetchone():
+            c.execute("INSERT INTO protocols (patient_id, version, exercise, target_reps, target_depth_deg, pain_threshold, "
+                      "tempo, notes, approved_by, created_at) VALUES ('test',1,'squat',10,100,5,'Slow and controlled',"
+                      "'Film from the side, whole body in frame.','Physiotherapist',?)", (now,))
+        for uid, email, role, name, areas in ACCOUNTS:
+            c.execute("INSERT OR IGNORE INTO users (id,email,password_hash,role,created_at) VALUES (?,?,?,?,?)",
+                      (uid, email, hash_password(DEMO_PASSWORD), role, now))
+            c.execute("INSERT OR IGNORE INTO patient_profiles (user_id,name,affected_areas_json,goals_json,"
+                      "consent_local_analysis,completed_at) VALUES (?,?,?,?,1,?)",
+                      (uid, name, json.dumps(areas), json.dumps(["strength"]), now))
+        c.execute("INSERT OR IGNORE INTO therapist_profiles (user_id,name,completed_at) VALUES "
+                  "('demo-therapist','Demo Physiotherapist',?)", (now,))
+        for spec in ("lower_body", "upper_body", "general_mobility"):
+            c.execute("INSERT OR IGNORE INTO therapist_specializations (user_id,specialization) VALUES "
+                      "('demo-therapist',?)", (spec,))
+        for ex in ("squat", "leg_lunge", "leg_abduction", "arm_abduction", "arm_vw", "push_ups"):
+            c.execute("INSERT OR IGNORE INTO therapist_exercises (user_id,exercise) VALUES ('demo-therapist',?)", (ex,))
+    print("accounts: therapist.demo@example.com, jordan@demo.local, sam@demo.local, test@demo.local, "
+          f"patient.demo@example.com (new) - password {DEMO_PASSWORD}")
 
 
 if __name__ == "__main__":

@@ -7,10 +7,11 @@ unless the physio explicitly confirms they reviewed the pain report (`acknowledg
 import json
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app import db
+from app.auth import require_therapist
 from app.routes.common import flag_for, session_detail, session_summary
 
 router = APIRouter(prefix="/api", tags=["review"])
@@ -19,7 +20,8 @@ SEVERITY_ORDER = {"urgent": 0, "review": 1, "none": 2}
 
 
 @router.get("/review-queue")
-def review_queue(include_reviewed: bool = False):
+def review_queue(request: Request, include_reviewed: bool = False):
+    require_therapist(request)
     """Analysed sessions that need a physio: flagged and not yet reviewed. Urgent first, then oldest."""
     rows = db.all_("SELECT * FROM sessions WHERE result_json IS NOT NULL ORDER BY created_at")
     out = []
@@ -71,12 +73,14 @@ def store_review(session_id: str, body: ReviewIn) -> dict:
 
 
 @router.post("/sessions/{session_id}/review", status_code=201)
-def review_session(session_id: str, body: ReviewIn):
+def review_session(session_id: str, body: ReviewIn, request: Request):
+    require_therapist(request)
     return store_review(session_id, body)
 
 
 @router.post("/sessions/{session_id}/report")
-async def regenerate_report(session_id: str):
+async def regenerate_report(session_id: str, request: Request):
+    require_therapist(request)
     """Rebuild the AI draft now (takes ~10-30 s with the local LLM) and return it."""
     import asyncio
 
@@ -88,7 +92,8 @@ async def regenerate_report(session_id: str):
 
 
 @router.get("/rep-corrections")
-def rep_corrections():
+def rep_corrections(request: Request):
+    require_therapist(request)
     """Physio rep labels that disagree with the model: future training data (#30)."""
     out = []
     for r in db.all_("SELECT r.session_id, r.rep_labels_json, s.result_json FROM reviews r "

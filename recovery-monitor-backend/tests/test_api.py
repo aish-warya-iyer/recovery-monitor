@@ -36,6 +36,13 @@ def client(monkeypatch):
         yield c
 
 
+def login(client, email="therapist.demo@example.com", password="recovery-demo"):
+    client.cookies.clear()
+    r = client.post("/api/auth/login", json={"email": email, "password": password})
+    assert r.status_code == 200, r.text
+    return r.json()["user"]
+
+
 def wait_done(client, sid, timeout=30):
     t0 = time.time()
     while time.time() - t0 < timeout:
@@ -52,6 +59,7 @@ def test_health_reports_local(client):
 
 
 def test_full_patient_physio_flow(client, tiny_video):
+    login(client)
     p = client.post("/api/patients", json={"name": "Test Patient", "id": "t-flow"}).json()
     proto = client.post(f"/api/patients/{p['id']}/protocol",
                         json={"target_reps": 10, "target_depth_deg": 95, "pain_threshold": 5}).json()
@@ -92,6 +100,7 @@ def test_full_patient_physio_flow(client, tiny_video):
 
 
 def test_rejects_non_video(client, tmp_path):
+    login(client)
     client.post("/api/patients", json={"name": "X", "id": "t-bad"})
     bad = tmp_path / "notes.txt"
     bad.write_text("hello")
@@ -109,3 +118,139 @@ def test_legacy_check_in_no_longer_crashes(client):
 def test_eval_summary_has_measured_numbers(client):
     e = client.get("/api/eval/summary").json()
     assert e["angle_accuracy"]["per_frame"]["side"]["mae_deg"] < 10
+
+
+def test_authenticated_patient_therapist_intake_flow(client):
+    patient = client.post("/api/auth/signup", json={
+        "email": "workflow-patient@example.com",
+        "password": "development-password",
+        "role": "patient",
+    })
+    assert patient.status_code == 201
+    patient_user = patient.json()["user"]
+
+    onboard = client.put("/api/onboarding/patient", json={
+        "name": "Workflow Patient",
+        "affected_areas": ["knee"],
+        "goals": ["improve_strength"],
+        "consent_local_analysis": True,
+    })
+    assert onboard.status_code == 200
+
+    intake = client.post("/api/patient/intakes", json={
+        "affected_areas": ["knee"],
+        "issue_types": ["pain_during_movement"],
+        "when_it_happens": ["during_movement"],
+        "pain_score": 3,
+        "duration": "one_to_three_months",
+        "trend": "unchanged",
+        "limitations": [],
+        "goals": ["improve_strength"],
+        "notes": "Squats feel difficult after a long day.",
+    })
+    assert intake.status_code == 201
+    intake_id = intake.json()["id"]
+
+    client.cookies.clear()
+    mismatch = client.post("/api/auth/signup", json={
+        "email": "workflow-upper@example.com",
+        "password": "development-password",
+        "role": "therapist",
+    })
+    assert mismatch.status_code == 201
+    assert client.put("/api/onboarding/therapist", json={
+        "name": "Upper Body Therapist",
+        "specializations": ["upper_body"],
+        "supported_exercises": ["push_ups"],
+    }).status_code == 200
+    assert client.get("/api/therapist/intakes").json() == []
+
+    client.cookies.clear()
+    therapist = client.post("/api/auth/signup", json={
+        "email": "workflow-therapist@example.com",
+        "password": "development-password",
+        "role": "therapist",
+    })
+    assert therapist.status_code == 201
+    therapist_user = therapist.json()["user"]
+    assert client.put("/api/onboarding/therapist", json={
+        "name": "Workflow Therapist",
+        "specializations": ["lower_body"],
+        "supported_exercises": ["squat"],
+    }).status_code == 200
+
+    requests = client.get("/api/therapist/intakes").json()
+    assert any(item["id"] == intake_id for item in requests)
+    accepted = client.post(f"/api/therapist/intakes/{intake_id}/claim")
+    assert accepted.status_code == 200
+    assert accepted.json()["assigned_therapist_id"] == therapist_user["id"]
+
+    plan = client.post(f"/api/therapist/intakes/{intake_id}/plan", json={
+        "exercise": "squat",
+        "target_reps": 8,
+        "target_sets": 2,
+        "target_depth_deg": 95,
+        "pain_threshold": 5,
+        "instructions": "Use a side view and stop if pain increases.",
+    })
+    assert plan.status_code == 201
+    plan_id = plan.json()["id"]
+    assert client.post(f"/api/therapist/plans/{plan_id}/approve", json={"notes": "Approved for testing."}).status_code == 200
+
+    client.cookies.clear()
+    assert client.post("/api/auth/login", json={
+        "email": "workflow-patient@example.com",
+        "password": "development-password",
+    }).status_code == 200
+    care_team = client.get("/api/patient/care-team")
+    assert care_team.status_code == 200
+    assert care_team.json()["therapist"] == {
+        "id": therapist_user["id"],
+        "email": "workflow-therapist@example.com",
+        "name": "Workflow Therapist",
+    }
+    assert client.get("/api/patient/intakes").json()[0]["status"] == "approved"
+
+
+def test_rbac_blocks_other_patients_and_signed_out_users(client, tiny_video):
+    login(client)
+    client.post("/api/patients", json={"name": "Other", "id": "rbac-other"})
+    client.cookies.clear()
+    # signed out: nothing patient-related
+    assert client.get("/api/patients").status_code == 401
+    assert client.get("/api/review-queue").status_code == 401
+    assert client.get("/api/patients/rbac-other/sessions").status_code == 401
+    # a patient: only their own records, never the therapist tools
+    me = client.post("/api/auth/signup", json={"email": "rbac-patient@example.com", "password": "development-password",
+                                               "role": "patient"}).json()["user"]
+    client.put("/api/onboarding/patient", json={"name": "RBAC Patient", "consent_local_analysis": True})
+    assert client.get(f"/api/patients/{me['id']}").status_code == 200
+    assert client.get(f"/api/patients/{me['id']}/sessions").status_code == 200
+    assert client.get("/api/patients/rbac-other").status_code == 403
+    assert client.get("/api/patients").status_code == 403
+    assert client.get("/api/review-queue").status_code == 403
+    assert client.post(f"/api/patients/{me['id']}/protocol", json={"exercise": "squat"}).status_code == 403
+    with tiny_video.open("rb") as f:
+        assert client.post("/api/patients/rbac-other/sessions",
+                           files={"video": ("c.mp4", f, "video/mp4")}).status_code == 403
+    with tiny_video.open("rb") as f:
+        own = client.post(f"/api/patients/{me['id']}/sessions", files={"video": ("c.mp4", f, "video/mp4")})
+    assert own.status_code == 202
+
+
+def test_approved_plan_becomes_the_patients_protocol(client):
+    client.cookies.clear()
+    pat = client.post("/api/auth/signup", json={"email": "plan-patient@example.com", "password": "development-password",
+                                                "role": "patient"}).json()["user"]
+    client.put("/api/onboarding/patient", json={"name": "Plan Patient", "affected_areas": ["shoulder_arm"],
+                                                "consent_local_analysis": True})
+    intake = client.post("/api/patient/intakes", json={
+        "affected_areas": ["shoulder_arm"], "issue_types": ["reduced_range"], "pain_score": 2,
+        "duration": "one_to_four_weeks", "trend": "unchanged", "goals": ["range_of_motion"]}).json()
+    login(client)  # demo therapist covers upper body
+    assert client.post(f"/api/therapist/intakes/{intake['id']}/claim").status_code in (200, 201)
+    plan = client.post(f"/api/therapist/intakes/{intake['id']}/plan", json={
+        "exercise": "arm_abduction", "target_reps": 8, "target_sets": 2, "pain_threshold": 4}).json()
+    assert client.post(f"/api/therapist/plans/{plan['id']}/approve", json={}).status_code == 200
+    proto = client.get(f"/api/patients/{pat['id']}/protocol").json()
+    assert proto["exercise"] == "arm_abduction" and proto["target_reps"] == 8 and proto["pain_threshold"] == 4

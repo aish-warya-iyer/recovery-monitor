@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from app import db, jobs
+from app.auth import require_patient_access, require_session_access
 from app.config import ALLOWED_VIDEO_TYPES, MAX_UPLOAD_MB, VIDEO_DIR
 from app.routes.common import session_detail
 from app.routes.patients import current_protocol
@@ -56,7 +57,8 @@ def create_session(patient_id: str, source: str, raw: Path, session_id: str, cre
 
 
 @router.post("/patients/{patient_id}/sessions", status_code=202)
-async def upload_session(patient_id: str, video: UploadFile = File(...), source: str = Form("upload")):
+async def upload_session(patient_id: str, request: Request, video: UploadFile = File(...), source: str = Form("upload")):
+    require_patient_access(request, patient_id)
     if not db.one("SELECT id FROM patients WHERE id = ?", patient_id):
         raise HTTPException(404, "No such patient")
     if source not in ("upload", "camera", "demo"):
@@ -67,12 +69,14 @@ async def upload_session(patient_id: str, video: UploadFile = File(...), source:
 
 
 @router.get("/sessions/{session_id}")
-def get_session(session_id: str):
+def get_session(session_id: str, request: Request):
+    require_session_access(request, session_id)
     return session_detail(_session_or_404(session_id))
 
 
 @router.get("/sessions/{session_id}/events")
 async def session_events(session_id: str, request: Request):
+    require_session_access(request, session_id)
     """Server-Sent Events: one `progress` event per change, then a final `done` or `failed` event."""
     _session_or_404(session_id)
 
@@ -100,17 +104,20 @@ def _file(path: str | None, media_type: str):
 
 
 @router.get("/sessions/{session_id}/video")
-def session_video(session_id: str):
+def session_video(session_id: str, request: Request):
+    require_session_access(request, session_id)
     return _file(_session_or_404(session_id)["video_path"], "video/mp4")
 
 
 @router.get("/sessions/{session_id}/annotated-video")
-def session_annotated(session_id: str):
+def session_annotated(session_id: str, request: Request):
+    require_session_access(request, session_id)
     return _file(_session_or_404(session_id)["annotated_path"], "video/mp4")
 
 
 @router.get("/sessions/{session_id}/thumbnail")
-def session_thumbnail(session_id: str):
+def session_thumbnail(session_id: str, request: Request):
+    require_session_access(request, session_id)
     return _file(_session_or_404(session_id)["thumbnail_path"], "image/jpeg")
 
 
@@ -123,7 +130,8 @@ class CheckIn(BaseModel):
 
 
 @router.post("/patients/{patient_id}/sessions/{session_id}/check-in")
-def save_check_in(patient_id: str, session_id: str, body: CheckIn):
+def save_check_in(patient_id: str, session_id: str, body: CheckIn, request: Request):
+    require_patient_access(request, patient_id)
     s = _session_or_404(session_id)
     if s["patient_id"] != patient_id:
         raise HTTPException(404, "No such session for this patient")
@@ -131,7 +139,8 @@ def save_check_in(patient_id: str, session_id: str, body: CheckIn):
 
 
 @router.post("/patients/{patient_id}/sessions/{session_id}/voice")
-async def voice_note(patient_id: str, session_id: str, audio: UploadFile = File(...)):
+async def voice_note(patient_id: str, session_id: str, request: Request, audio: UploadFile = File(...)):
+    require_patient_access(request, patient_id)
     """Patient's spoken description -> text with Whisper on this device. Returned for the patient to confirm;
     it is stored only when they submit the check-in."""
     s = _session_or_404(session_id)
@@ -184,7 +193,8 @@ def _store_check_in(session_id: str, body: CheckIn) -> dict:
 
 
 @router.delete("/sessions/{session_id}", status_code=204)
-def delete_session(session_id: str):
+def delete_session(session_id: str, request: Request):
+    require_session_access(request, session_id)
     """Removes the video, annotated video, thumbnail and all results for this session (#38)."""
     _session_or_404(session_id)
     shutil.rmtree(VIDEO_DIR / session_id, ignore_errors=True)

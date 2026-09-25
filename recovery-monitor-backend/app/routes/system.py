@@ -5,10 +5,11 @@ import json
 import shutil
 import uuid
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
 from app import db
+from app.auth import current_user, require_therapist
 from app.config import AI_ENDPOINTS, AI_SERVICE_URL, DEVICE_NAME, LLM_MODEL, LLM_URL, MODEL_RESULTS, REFERENCE_DIR
 from app.guards import is_local, network_reachable
 from app.video import VideoError, normalize
@@ -79,13 +80,15 @@ def eval_summary():
 
 
 @router.get("/reference-videos")
-def list_reference_videos(exercise: str | None = None):
+def list_reference_videos(request: Request, exercise: str | None = None):
+    current_user(request)
     rows = db.all_("SELECT * FROM reference_videos WHERE (? IS NULL OR exercise = ?) ORDER BY id", exercise, exercise)
     return [{**r, "url": f"/api/reference-videos/{r['id']}/video", "path": None} for r in rows]
 
 
 @router.get("/reference-videos/{video_id}/video")
-def reference_video(video_id: int):
+def reference_video(video_id: int, request: Request):
+    current_user(request)
     r = db.one("SELECT * FROM reference_videos WHERE id = ?", video_id)
     if not r:
         raise HTTPException(404, "No such reference video")
@@ -93,8 +96,9 @@ def reference_video(video_id: int):
 
 
 @router.post("/reference-videos", status_code=201)
-async def add_reference_video(video: UploadFile = File(...), title: str = Form(...), exercise: str = Form("squat"),
+async def add_reference_video(request: Request, video: UploadFile = File(...), title: str = Form(...), exercise: str = Form("squat"),
                               source: str = Form("recorded by the physiotherapist")):
+    require_therapist(request)
     from app.routes.sessions import save_upload
 
     folder = REFERENCE_DIR / uuid.uuid4().hex[:12]
