@@ -1,0 +1,68 @@
+{
+ "exercise": "squat",
+ "rep_counting": {
+  "gt_reps": 390,
+  "detected": 373,
+  "precision": 0.914,
+  "recall": 0.874,
+  "recall_by_view": {
+   "front": 0.612,
+   "half_profile": 0.959,
+   "side": 0.969
+  }
+ },
+ "classifier": {
+  "n_reps": 287,
+  "n_incorrect": 115,
+  "n_subjects": 9,
+  "evaluation": "leave-one-subject-out; baseline = first 3 correct reps per recording (excluded)",
+  "threshold": 0.17,
+  "xgboost": {
+   "precision_incorrect": 0.508,
+   "recall_incorrect": 0.809,
+   "f1_incorrect": 0.624,
+   "accuracy": 0.61,
+   "roc_auc": 0.687
+  },
+  "rules_baseline": {
+   "precision_incorrect": 0.382,
+   "recall_incorrect": 0.722,
+   "f1_incorrect": 0.5,
+   "accuracy": 0.422
+  }
+ },
+ "top_features": [
+  [
+   "down_s_rel",
+   0.086
+  ],
+  [
+   "peak_down_speed_rel",
+   0.079
+  ],
+  [
+   "peak_up_speed_rel",
+   0.067
+  ],
+  [
+   "start_rel",
+   0.066
+  ],
+  [
+   "duration_s_rel",
+   0.059
+  ],
+  [
+   "trunk_lean_max_rel",
+   0.057
+  ],
+  [
+   "hold_s_rel",
+   0.053
+  ],
+  [
+   "other_at_peak_rel",
+   0.05
+  ]
+ ]
+}

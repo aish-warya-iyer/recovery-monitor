@@ -1,0 +1,68 @@
+{
+ "exercise": "arm_vw",
+ "rep_counting": {
+  "gt_reps": 416,
+  "detected": 382,
+  "precision": 0.707,
+  "recall": 0.649,
+  "recall_by_view": {
+   "front": 0.817,
+   "half_profile": 0.904,
+   "side": 0.018
+  }
+ },
+ "classifier": {
+  "n_reps": 181,
+  "n_incorrect": 117,
+  "n_subjects": 8,
+  "evaluation": "leave-one-subject-out; baseline = first 3 correct reps per recording (excluded)",
+  "threshold": 0.52,
+  "xgboost": {
+   "precision_incorrect": 0.725,
+   "recall_incorrect": 0.812,
+   "f1_incorrect": 0.766,
+   "accuracy": 0.68,
+   "roc_auc": 0.728
+  },
+  "rules_baseline": {
+   "precision_incorrect": 0.626,
+   "recall_incorrect": 0.872,
+   "f1_incorrect": 0.729,
+   "accuracy": 0.58
+  }
+ },
+ "top_features": [
+  [
+   "shoulder_min_rel",
+   0.09
+  ],
+  [
+   "up_s_rel",
+   0.076
+  ],
+  [
+   "asymmetry_at_peak_rel",
+   0.067
+  ],
+  [
+   "duration_s_rel",
+   0.064
+  ],
+  [
+   "trunk_lean_at_peak_rel",
+   0.06
+  ],
+  [
+   "hold_s_rel",
+   0.057
+  ],
+  [
+   "start_rel",
+   0.055
+  ],
+  [
+   "down_up_ratio_rel",
+   0.054
+  ]
+ ]
+}

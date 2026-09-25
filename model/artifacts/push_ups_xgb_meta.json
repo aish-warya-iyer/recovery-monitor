@@ -1,0 +1,30 @@
+{
+ "exercise": "push_ups",
+ "threshold": 0.4,
+ "features": [
+  "peak_rel",
+  "rom_rel",
+  "start_rel",
+  "end_rel",
+  "duration_s_rel",
+  "down_s_rel",
+  "up_s_rel",
+  "down_up_ratio_rel",
+  "peak_down_speed_rel",
+  "peak_up_speed_rel",
+  "jerk_rms_rel",
+  "hold_s_rel",
+  "body_line_max_rel",
+  "body_line_min_rel",
+  "body_line_at_peak_rel",
+  "asymmetry_max_rel",
+  "asymmetry_min_rel",
+  "asymmetry_at_peak_rel",
+  "trunk_lean_max_rel",
+  "trunk_lean_min_rel",
+  "trunk_lean_at_peak_rel"
+ ],
+ "baseline_reps": 3,
+ "min_depth_deg": 15,
+ "version": "push_ups_xgb_v1"
+}

@@ -1,0 +1,30 @@
+{
+ "exercise": "leg_abduction",
+ "threshold": 0.5,
+ "features": [
+  "peak_rel",
+  "rom_rel",
+  "start_rel",
+  "end_rel",
+  "duration_s_rel",
+  "down_s_rel",
+  "up_s_rel",
+  "down_up_ratio_rel",
+  "peak_down_speed_rel",
+  "peak_up_speed_rel",
+  "jerk_rms_rel",
+  "hold_s_rel",
+  "other_max_rel",
+  "other_min_rel",
+  "other_at_peak_rel",
+  "trunk_lean_max_rel",
+  "trunk_lean_min_rel",
+  "trunk_lean_at_peak_rel",
+  "knee_max_rel",
+  "knee_min_rel",
+  "knee_at_peak_rel"
+ ],
+ "baseline_reps": 3,
+ "min_depth_deg": 10,
+ "version": "leg_abduction_xgb_v1"
+}

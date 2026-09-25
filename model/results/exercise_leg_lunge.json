@@ -1,0 +1,68 @@
+{
+ "exercise": "leg_lunge",
+ "rep_counting": {
+  "gt_reps": 348,
+  "detected": 342,
+  "precision": 0.889,
+  "recall": 0.874,
+  "recall_by_view": {
+   "front": 0.568,
+   "half_profile": 0.977,
+   "side": 0.977
+  }
+ },
+ "classifier": {
+  "n_reps": 220,
+  "n_incorrect": 130,
+  "n_subjects": 7,
+  "evaluation": "leave-one-subject-out; baseline = first 3 correct reps per recording (excluded)",
+  "threshold": 0.36,
+  "xgboost": {
+   "precision_incorrect": 0.642,
+   "recall_incorrect": 0.8,
+   "f1_incorrect": 0.712,
+   "accuracy": 0.618,
+   "roc_auc": 0.731
+  },
+  "rules_baseline": {
+   "precision_incorrect": 0.589,
+   "recall_incorrect": 0.992,
+   "f1_incorrect": 0.739,
+   "accuracy": 0.586
+  }
+ },
+ "top_features": [
+  [
+   "peak_up_speed_rel",
+   0.073
+  ],
+  [
+   "start_rel",
+   0.071
+  ],
+  [
+   "other_max_rel",
+   0.067
+  ],
+  [
+   "trunk_lean_max_rel",
+   0.066
+  ],
+  [
+   "peak_down_speed_rel",
+   0.058
+  ],
+  [
+   "other_at_peak_rel",
+   0.057
+  ],
+  [
+   "down_s_rel",
+   0.057
+  ],
+  [
+   "asymmetry_at_peak_rel",
+   0.055
+  ]
+ ]
+}
