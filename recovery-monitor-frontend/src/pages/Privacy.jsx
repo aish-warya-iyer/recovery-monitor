@@ -8,7 +8,10 @@ export default function Privacy() {
   const d = h.data;
   const rows = [
     [Cpu, 'Pose estimation', 'MediaPipe Pose Landmarker, on this device’s CPU'],
-    [Cpu, 'Rep analysis and form model', 'Rules + XGBoost, on this device'],
+    [Cpu, 'Rep analysis and form models', 'Rules + one XGBoost model per exercise, on this device'],
+    [Cpu, 'Video model (fine-tuned)', 'Qwen3-VL-4B + our LoRA, on this device’s GPU: which exercise, camera view, form'],
+    [Cpu, 'Voice notes', 'Whisper large-v3-turbo on this device’s GPU; the transcript is shown to the patient first'],
+    [Cpu, 'Draft report for the physiotherapist', 'Local language model on this device; red flags by fixed rules; numbers checked'],
     [HardDrive, 'Videos', 'Stored on this device only; the patient or physio can delete a session and everything derived from it'],
     [Database, 'Results, check-ins, reviews', 'Local SQLite database on this device'],
     [ShieldCheck, 'Cloud AI', 'None. The service refuses to start if an AI endpoint is configured outside this device.'],

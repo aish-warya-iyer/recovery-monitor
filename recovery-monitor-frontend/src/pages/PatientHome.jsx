@@ -4,6 +4,8 @@ import { api } from '../api.js';
 import SessionPlayer from '../components/SessionPlayer.jsx';
 import TrendChart from '../components/TrendChart.jsx';
 import UploadPanel from '../components/UploadPanel.jsx';
+import VoiceRecorder from '../components/VoiceRecorder.jsx';
+import { exerciseName } from '../exercises.js';
 import { Disclaimer, ErrorNote, Note, Panel, Stat } from '../components/ui.jsx';
 import { fmtDate, fmtDateTime, num, useLoad } from '../hooks.js';
 
@@ -37,9 +39,11 @@ export default function PatientHome({ patientId }) {
           {protocol ? (
             <>
               <div className="stats-row">
-                <Stat label="Exercise" value={protocol.exercise === 'squat' ? 'Squats' : 'Leg extension'} />
+                <Stat label="Exercise" value={exerciseName(protocol.exercise)} />
                 <Stat label="Repetitions" value={protocol.target_reps} />
-                <Stat label="Target depth" value={`${protocol.target_depth_deg}°`} sub="knee angle at the bottom" />
+                {protocol.exercise === 'squat' && (
+                  <Stat label="Target depth" value={`${protocol.target_depth_deg}°`} sub="knee angle at the bottom" />
+                )}
               </div>
               {protocol.tempo && <p className="plan-line"><CalendarCheck size={14} /> {protocol.tempo}</p>}
               {protocol.notes && <p className="plan-line"><MessageSquareText size={14} /> {protocol.notes}</p>}
@@ -97,11 +101,21 @@ function LatestSession({ session, patientId, refVideo, onSaved }) {
         <>
           <div className="stats-row">
             <Stat label="Reps done" value={`${r.repetitions}${target ? ` / ${target}` : ''}`} />
-            <Stat label="Reached target depth" value={`${r.metrics?.reps_reaching_target ?? 0} of ${r.repetitions}`} />
-            <Stat label="Deepest squat" value={num(r.metrics?.min_knee_angle_deg, 0, '°')} />
+            {r.exercise === 'squat' ? (
+              <>
+                <Stat label="Reached target depth" value={`${r.metrics?.reps_reaching_target ?? 0} of ${r.repetitions}`} />
+                <Stat label="Deepest squat" value={num(r.metrics?.min_knee_angle_deg, 0, '°')} />
+              </>
+            ) : (
+              <Stat label={r.measure_label ?? 'Movement'} value={num(r.metrics?.peak_deg, 0, '°')} sub="best rep" />
+            )}
             <Stat label="For your physio to check" value={flagged} tone={flagged ? 'amber' : 'green'}
               sub={flagged ? 'reps looked different from your approved form' : 'nothing flagged'} />
           </div>
+          {r.vlm?.mismatch && (
+            <Note tone="warn">This looks like <strong>{exerciseName(r.vlm.detected_exercise).toLowerCase()}</strong>, but
+              your plan is <strong>{exerciseName(r.vlm.planned_exercise).toLowerCase()}</strong>. Your physiotherapist will check.</Note>
+          )}
           {r.quality?.instructions?.length > 0 && <Note tone="warn">{r.quality.instructions.join(' ')}</Note>}
         </>
       )}
@@ -110,6 +124,7 @@ function LatestSession({ session, patientId, refVideo, onSaved }) {
         <div className={`feedback ${review.decision}`}>
           <strong>{review.decision === 'approve' ? 'Your physiotherapist approved this session' : 'Your physiotherapist asked for changes'}</strong>
           {review.notes && <p>“{review.notes}”</p>}
+          {session.report?.patient_message && <p>{session.report.patient_message}</p>}
           <small>{fmtDateTime(review.created_at)}</small>
         </div>
       )}
@@ -138,12 +153,13 @@ function CheckIn({ patientId, sessionId, onSaved }) {
   const [pain, setPain] = useState(null);
   const [stiff, setStiff] = useState(false);
   const [comment, setComment] = useState('');
+  const [transcript, setTranscript] = useState('');
   const [state, setState] = useState({ saving: false, error: null });
 
   async function save() {
     setState({ saving: true, error: null });
     try {
-      await api.checkIn(patientId, sessionId, { pain_score: pain, stiffness: stiff, comment });
+      await api.checkIn(patientId, sessionId, { pain_score: pain, stiffness: stiff, comment, transcript: transcript || null });
       onSaved();
     } catch (error) {
       setState({ saving: false, error });
@@ -160,7 +176,14 @@ function CheckIn({ patientId, sessionId, onSaved }) {
       </div>
       <div className="pain-labels"><span>No pain</span><span>Worst pain</span></div>
       <label className="check"><input type="checkbox" checked={stiff} onChange={(e) => setStiff(e.target.checked)} /> My knee felt stiff</label>
-      <textarea placeholder="Anything your physiotherapist should know? (optional)" value={comment}
+      <VoiceRecorder patientId={patientId} sessionId={sessionId} onTranscript={setTranscript} />
+      {transcript && (
+        <label className="field">
+          <span>What we heard (edit if anything is wrong)</span>
+          <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} rows={3} />
+        </label>
+      )}
+      <textarea placeholder="Or type anything your physiotherapist should know (optional)" value={comment}
         onChange={(e) => setComment(e.target.value)} rows={2} />
       <button className="primary-button" disabled={pain === null || state.saving} onClick={save}>
         {state.saving ? 'Saving…' : 'Send to my physiotherapist'}

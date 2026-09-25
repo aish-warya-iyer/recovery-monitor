@@ -268,3 +268,14 @@ blockquote { margin: 0; padding: 8px 12px; border-left: 3px solid #cdbfea; color
   .queue-row > svg { display: none; }
   h1 { font-size: 23px; }
 }
+
+/* ---------- voice + AI report ---------- */
+.voice { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.report { display: grid; gap: 12px; }
+.report section { display: grid; gap: 4px; }
+.report h4 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.report p, .report li { font-size: 14px; color: var(--ink); line-height: 1.5; }
+.report ul { margin: 0; padding-left: 18px; }
+.report .next-step { background: #f4f8fd; border: 1px solid #dbe8f6; border-radius: 9px; padding: 10px 12px; }
+.report .to-patient { background: #f7f3fd; border: 1px solid #e6dcf6; border-radius: 9px; padding: 10px 12px; }
+.note strong svg { vertical-align: -2px; }

@@ -48,7 +48,7 @@ const SessionPlayer = forwardRef(function SessionPlayer({ session, selectedRep, 
       {result?.angle_series && (
         <>
           <div className="chart-caption">
-            <span>Knee angle ({result.metrics?.side ?? 'measured'} leg)</span>
+            <span>{result.angle_series.label ?? 'Knee angle'}{result.metrics?.side && result.metrics.side !== 'both' ? ` (${result.metrics.side})` : ''}</span>
             {result.metrics?.expected_angle_error_deg != null && (
               <span className="muted">±{Math.round(result.metrics.expected_angle_error_deg)}° measured error for this camera angle</span>
             )}
@@ -56,7 +56,7 @@ const SessionPlayer = forwardRef(function SessionPlayer({ session, selectedRep, 
           <AngleChart
             series={result.angle_series}
             reps={result.reps}
-            targetDepth={result.protocol?.target_depth_deg}
+            targetDepth={result.exercise === 'squat' || !result.exercise ? result.protocol?.target_depth_deg : null}
             currentTime={time}
             selectedRep={selectedRep}
             onSeek={(t) => {

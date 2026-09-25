@@ -2,7 +2,7 @@ import { num } from '../hooks.js';
 import { RepVerdict } from './ui.jsx';
 
 // One card per rep. Physio mode adds correct/incorrect buttons that override the model.
-export default function RepList({ reps, onSelect, selected, labels, onLabel, physio = false }) {
+export default function RepList({ reps, onSelect, selected, labels, onLabel, physio = false, measure = 'Depth' }) {
   if (!reps?.length) return <div className="empty-note">No complete reps were detected.</div>;
   return (
     <div className="rep-list">
@@ -16,10 +16,13 @@ export default function RepList({ reps, onSelect, selected, labels, onLabel, phy
               <RepVerdict rep={r} />
             </div>
             <div className="rep-metrics">
-              <span>Depth <b>{num(r.min_knee_angle_deg, 0, '°')}</b></span>
+              <span>{measure} <b>{num(r.peak_deg ?? r.min_knee_angle_deg, 0, '°')}</b></span>
               <span>Time <b>{num(r.duration_s, 1, ' s')}</b></span>
               {physio && r.probability_incorrect != null && (
                 <span>Model <b>{Math.round(r.probability_incorrect * 100)}%</b> off-form</span>
+              )}
+              {physio && r.vlm && r.vlm.correct !== null && (
+                <span>Video model: <b>{r.vlm.correct ? 'looks correct' : 'looks off'}</b></span>
               )}
             </div>
             {r.flag_reasons?.length > 0 && (

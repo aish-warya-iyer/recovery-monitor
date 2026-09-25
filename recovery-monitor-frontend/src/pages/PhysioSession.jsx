@@ -1,7 +1,9 @@
 import { ArrowLeft, Check, RotateCcw } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
+import AiReport from '../components/AiReport.jsx';
 import RepList from '../components/RepList.jsx';
+import { exerciseName } from '../exercises.js';
 import SessionPlayer from '../components/SessionPlayer.jsx';
 import { ErrorNote, FlagBadge, Note, Panel, Stat } from '../components/ui.jsx';
 import { fmtDateTime, go, num, pct, useLoad } from '../hooks.js';
@@ -74,9 +76,9 @@ export default function PhysioSession({ sessionId }) {
           <span className="eyebrow">Session review</span>
           <h1>{patient.data?.name ?? s.patient_id} · {fmtDateTime(s.created_at)}</h1>
           <p className="page-subtitle">
-            {s.exercise === 'squat' ? 'Squats' : s.exercise} · {r?.model?.classifier
+            {exerciseName(r?.exercise ?? s.exercise)} · {r?.model?.classifier
               ? `compared with ${r.model.baseline_reps} approved reps from earlier sessions`
-              : 'rules only: no approved baseline session yet'}
+              : 'no approved baseline yet: video model and rules only'}
           </p>
         </div>
         <FlagBadge flag={s.flag} />
@@ -89,6 +91,14 @@ export default function PhysioSession({ sessionId }) {
         </Note>
       )}
 
+      {r?.vlm?.available && (
+        <Note tone={r.vlm.mismatch ? 'warn' : 'info'}>
+          Our fine-tuned video model sees <strong>{exerciseName(r.vlm.detected_exercise).toLowerCase()}</strong>
+          {' '}({Math.round((r.vlm.confidence ?? 0) * 100)}% of windows), camera {String(r.vlm.view ?? 'unknown').replace('_', ' ')}.
+          {r.vlm.mismatch && <> The plan is <strong>{exerciseName(r.vlm.planned_exercise).toLowerCase()}</strong>, so this was analysed as what was actually done.</>}
+        </Note>
+      )}
+
       <div className="review-layout">
         <div>
           <Panel title="Movement" subtitle="Click a rep or the chart to jump there · J / K for next / previous rep">
@@ -98,8 +108,17 @@ export default function PhysioSession({ sessionId }) {
             <Panel title="Session numbers">
               <div className="stats-row">
                 <Stat label="Reps" value={`${r.repetitions} / ${r.protocol?.target_reps ?? '—'}`} />
-                <Stat label="Reached target depth" value={`${r.metrics?.reps_reaching_target ?? 0}`} sub={`target ${r.protocol?.target_depth_deg ?? '—'}°`} />
-                <Stat label="Median depth" value={num(r.metrics?.median_depth_deg, 0, '°')} />
+                {r.exercise === 'squat' || !r.exercise ? (
+                  <>
+                    <Stat label="Reached target depth" value={`${r.metrics?.reps_reaching_target ?? 0}`} sub={`target ${r.protocol?.target_depth_deg ?? '—'}°`} />
+                    <Stat label="Median depth" value={num(r.metrics?.median_depth_deg, 0, '°')} />
+                  </>
+                ) : (
+                  <>
+                    <Stat label={r.measure_label ?? 'Peak'} value={num(r.metrics?.peak_deg, 0, '°')} sub="best rep" />
+                    <Stat label="Median range" value={num(r.metrics?.median_range_deg, 0, '°')} />
+                  </>
+                )}
                 <Stat label="Tracking confidence" value={pct(r.confidence)} sub={`camera: ${r.quality?.view?.replace('_', ' ') ?? '—'}`} />
               </div>
             </Panel>
@@ -108,9 +127,12 @@ export default function PhysioSession({ sessionId }) {
 
         <div>
           <Panel title="Reps" subtitle="The model's view; your call overrides it and teaches future comparisons">
-            <RepList reps={r?.reps} physio selected={selected} onSelect={selectRep} labels={labels}
+            <RepList reps={r?.reps} physio measure={r?.exercise === 'squat' ? 'Depth' : (r?.measure_label ?? 'Peak')}
+              selected={selected} onSelect={selectRep} labels={labels}
               onLabel={(i, v) => setLabels((l) => ({ ...l, [i]: v }))} />
           </Panel>
+
+          <AiReport session={s} onUpdated={session.reload} />
 
           <Panel title="Patient check-in">
             {s.check_in ? (
@@ -120,6 +142,7 @@ export default function PhysioSession({ sessionId }) {
                     sub={`plan threshold ${s.protocol?.pain_threshold ?? '—'}`} />
                   <Stat label="Stiffness" value={s.check_in.stiffness ? 'Yes' : 'No'} />
                 </div>
+                {s.check_in.transcript && <blockquote>🎤 “{s.check_in.transcript}”</blockquote>}
                 {s.check_in.comment && <blockquote>“{s.check_in.comment}”</blockquote>}
               </>
             ) : <p className="muted small">No check-in yet.</p>}

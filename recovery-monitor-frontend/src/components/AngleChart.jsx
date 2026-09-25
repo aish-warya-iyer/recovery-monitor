@@ -3,12 +3,13 @@ import { useMemo, useRef } from 'react';
 const W = 900;
 const H = 220;
 const PAD = { l: 44, r: 12, t: 12, b: 26 };
-const A_MIN = 40;
-const A_MAX = 185;
 
 // Knee angle over time. Standing (~180°) at the top, deeper squats lower down, like the movement itself.
 export default function AngleChart({ series, reps = [], targetDepth, currentTime = 0, onSeek, selectedRep }) {
   const ref = useRef(null);
+  const vals = (series?.knee || []).filter((v) => v !== null && v !== undefined);
+  const A_MIN = Math.max(0, Math.floor((Math.min(...vals, targetDepth ?? 999) - 10) / 10) * 10);
+  const A_MAX = Math.min(190, Math.ceil((Math.max(...vals, targetDepth ?? 0) + 10) / 10) * 10);
   const duration = series?.t?.length ? series.t[series.t.length - 1] : 1;
   const x = (t) => PAD.l + (t / duration) * (W - PAD.l - PAD.r);
   const y = (a) => PAD.t + ((A_MAX - a) / (A_MAX - A_MIN)) * (H - PAD.t - PAD.b);
@@ -42,7 +43,7 @@ export default function AngleChart({ series, reps = [], targetDepth, currentTime
   return (
     <svg ref={ref} className="angle-chart" viewBox={`0 0 ${W} ${H}`} onClick={seek} role="img"
       aria-label="Knee angle over time">
-      {[180, 150, 120, 90, 60].map((a) => (
+      {Array.from({ length: 5 }, (_, i) => Math.round(A_MIN + ((A_MAX - A_MIN) * (i + 0.5)) / 5)).map((a) => (
         <g key={a}>
           <line x1={PAD.l} x2={W - PAD.r} y1={y(a)} y2={y(a)} className="grid" />
           <text x={PAD.l - 8} y={y(a) + 3} className="axis" textAnchor="end">{a}°</text>

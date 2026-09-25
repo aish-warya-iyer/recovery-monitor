@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import TrendChart from '../components/TrendChart.jsx';
 import { ErrorNote, FlagBadge, Note, Panel } from '../components/ui.jsx';
+import { EXERCISES } from '../exercises.js';
 import { fmtDateTime, go, num, useLoad } from '../hooks.js';
 
 export default function PhysioPatient({ patientId }) {
@@ -81,6 +82,14 @@ function ProtocolEditor({ patientId, protocol, refs, onSaved }) {
 
   return (
     <div className="form">
+      <label className="field">
+        <span>Exercise</span>
+        <select value={form.exercise} onChange={set('exercise')}>
+          {Object.entries(EXERCISES).filter(([k]) => k !== 'seated_leg_extension').map(([k, v]) => (
+            <option key={k} value={k}>{v.name} · {v.area}</option>
+          ))}
+        </select>
+      </label>
       <div className="form-row">
         <label className="field"><span>Repetitions</span><input type="number" min="1" max="100" value={form.target_reps} onChange={set('target_reps')} /></label>
         <label className="field"><span>Target depth (knee °)</span><input type="number" min="30" max="175" value={form.target_depth_deg} onChange={set('target_depth_deg')} /></label>

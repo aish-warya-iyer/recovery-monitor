@@ -49,6 +49,13 @@ export const api = {
     request(`/api/patients/${patientId}/sessions/${sessionId}/check-in`, json('POST', data)),
   deleteSession: (id) => request(`/api/sessions/${id}`, { method: 'DELETE' }),
 
+  voiceNote: (patientId, sessionId, blob) => {
+    const body = new FormData();
+    body.append('audio', blob, blob.name || 'voice.webm');
+    return request(`/api/patients/${patientId}/sessions/${sessionId}/voice`, { method: 'POST', body });
+  },
+  regenerateReport: (sessionId) => request(`/api/sessions/${sessionId}/report`, { method: 'POST' }),
+
   reviewQueue: () => request('/api/review-queue'),
   review: (sessionId, data) => request(`/api/sessions/${sessionId}/review`, json('POST', data)),
   referenceVideos: () => request('/api/reference-videos?exercise=squat'),

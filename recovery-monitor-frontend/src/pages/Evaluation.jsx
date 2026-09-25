@@ -1,5 +1,6 @@
 import { api } from '../api.js';
 import { ErrorNote, Note, Panel, Stat } from '../components/ui.jsx';
+import { exerciseName } from '../exercises.js';
 import { num, pct, useLoad } from '../hooks.js';
 
 const VIEWS = [['side', 'Side'], ['half_profile', 'Half-profile (45°)'], ['front', 'Front']];
@@ -76,6 +77,41 @@ export default function Evaluation() {
             on a model that never saw them.</p>
         </Panel>
       </div>
+
+      <Panel title="All six exercises" subtitle="Rep counting and incorrect-rep detection, each person tested by a model that never saw them">
+        <table className="table compact">
+          <thead><tr><th>Exercise</th><th>Reps found</th><th>Best camera view</th><th>Incorrect reps: F1 (XGBoost)</th><th>F1 single rule</th><th>Test reps</th></tr></thead>
+          <tbody>
+            {Object.entries(d?.exercises ?? {}).filter(([, v]) => v).map(([k, v]) => {
+              const views = v.rep_counting.recall_by_view ?? {};
+              const best = Object.entries(views).sort((a, b) => b[1] - a[1])[0];
+              return (
+                <tr key={k}>
+                  <td>{exerciseName(k)}</td>
+                  <td>{pct(v.rep_counting.recall)}</td>
+                  <td>{best ? `${best[0].replace('_', ' ')} (${pct(best[1])})` : '—'}</td>
+                  <td><b>{num(v.classifier.xgboost.f1_incorrect, 2)}</b></td>
+                  <td>{num(v.classifier.rules_baseline.f1_incorrect, 2)}</td>
+                  <td>{v.classifier.n_reps}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </Panel>
+
+      <Panel title="Our fine-tuned video model" subtitle={`Qwen3-VL-4B + LoRA trained on REHAB24-6 · tested on ${d?.vlm?.after?.n ?? '—'} reps from 2 people it never saw`}>
+        <table className="table compact">
+          <thead><tr><th></th><th>Before fine-tuning</th><th>After fine-tuning</th></tr></thead>
+          <tbody>
+            <tr><td>Recognises the exercise</td><td>{pct(d?.vlm?.before?.exercise_accuracy)}</td><td><b>{pct(d?.vlm?.after?.exercise_accuracy)}</b></td></tr>
+            <tr><td>Camera view</td><td>{pct(d?.vlm?.before?.view_accuracy)}</td><td><b>{pct(d?.vlm?.after?.view_accuracy)}</b></td></tr>
+            <tr><td>Correct vs incorrect rep</td><td>{pct(d?.vlm?.before?.correctness_accuracy)}</td><td><b>{pct(d?.vlm?.after?.correctness_accuracy)}</b></td></tr>
+            <tr><td>Seconds per rep on the Nano</td><td>{num(d?.vlm?.before?.seconds_per_rep, 1)}</td><td><b>{num(d?.vlm?.after?.seconds_per_rep, 1)}</b></td></tr>
+          </tbody>
+        </table>
+        <p className="muted small">The video model identifies the exercise and camera view; the joint-angle models above judge form.</p>
+      </Panel>
 
       <Panel title="Limits we measured, not hid">
         <ul className="plain-list">{d?.caveats?.map((c) => <li key={c}>{c}</li>)}</ul>

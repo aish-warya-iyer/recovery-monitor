@@ -26,14 +26,14 @@ SCHEMA = {
     "type": "object",
     "properties": {
         "patient_said": {"type": "string", "maxLength": 400},
-        "movement_summary": {"type": "string", "maxLength": 500},
+        "movement_summary": {"type": "string", "maxLength": 700},
         "agreement": {"type": "string", "enum": ["consistent", "partly_consistent", "inconsistent", "not_enough_info"]},
-        "agreement_note": {"type": "string", "maxLength": 300},
+        "agreement_note": {"type": "string", "maxLength": 600},
         "concerns": {"type": "array", "items": {"type": "string", "maxLength": 200}, "maxItems": 4},
         "questions_for_patient": {"type": "array", "items": {"type": "string", "maxLength": 160}, "maxItems": 3},
         "coaching_cues": {"type": "array", "items": {"type": "string", "maxLength": 160}, "maxItems": 3},
-        "suggested_next_step": {"type": "string", "maxLength": 300},
-        "patient_message": {"type": "string", "maxLength": 500},
+        "suggested_next_step": {"type": "string", "minLength": 30, "maxLength": 300},
+        "patient_message": {"type": "string", "minLength": 40, "maxLength": 500},
     },
     "required": ["patient_said", "movement_summary", "agreement", "agreement_note", "concerns",
                  "questions_for_patient", "coaching_cues", "suggested_next_step", "patient_message"],
@@ -47,7 +47,11 @@ Rules:
 - Use ONLY the facts. Never invent measurements, numbers, symptoms or history.
 - Every number you write must appear in the facts. If unsure, leave the number out.
 - Do not diagnose, do not name medical conditions, do not prescribe. You suggest; the physiotherapist decides.
-- patient_said: the patient's own words, summarised faithfully in one or two sentences.
+- patient_said: the patient's own words from check_in (transcript and comment), summarised faithfully. If check_in
+  is null or has no words, write exactly: "The patient has not added a comment yet."
+- movement.exercise_actually_done is what the video shows. Describe THAT exercise (never call it the plan's
+  exercise if they differ). If it differs from plan.exercise, say so clearly. Coaching cues must be about the
+  exercise actually done.
 - movement_summary: what the video measured, in plain words for a clinician.
 - agreement: compare what the patient said with what the video showed; explain briefly in agreement_note.
 - concerns: the most important points for the physiotherapist, most important first.
@@ -110,10 +114,10 @@ def build_facts(session: dict) -> dict:
                  f"{(vlm.get('planned_exercise') or '').replace('_', ' ')}")
     return {
         "patient": {"first_name": (patient or {}).get("name", "").split(" ")[0], "condition": (patient or {}).get("condition")},
-        "plan": proto and {"exercise": proto["exercise"], "target_reps": proto["target_reps"],
+        "plan": proto and {"exercise": proto["exercise"].replace("_", " "), "target_reps": proto["target_reps"],
                            "pain_alert_at": proto["pain_threshold"], "notes": proto["notes"]},
         "movement": {
-            "exercise": r.get("exercise_label") or r.get("exercise"), "status": r.get("status"),
+            "exercise_actually_done": r.get("exercise_label") or r.get("exercise"), "status": r.get("status"),
             "measure": r.get("measure_label") or (r.get("angle_series") or {}).get("label"),
             "reps_done": r.get("repetitions"), "reps_flagged": len([x for x in reps if not x.get("predicted_correct", True)]),
             "flagged_reps": flagged, "camera_view": (r.get("quality") or {}).get("view"),
@@ -143,12 +147,27 @@ def check_numbers(draft: dict, facts: dict) -> list[str]:
     return sorted(bad)
 
 
+NO_COMMENT = "The patient has not added a comment yet."
+
+
+def enforce(draft: dict, facts: dict) -> dict:
+    """Facts the LLM must not get wrong are set by code, whatever it wrote."""
+    ci = facts.get("check_in") or {}
+    if not (ci.get("transcript") or ci.get("comment")):
+        draft["patient_said"] = NO_COMMENT
+        draft["agreement"] = "not_enough_info"
+        draft["agreement_note"] = "Nothing to compare yet: the patient has not described how the session felt."
+        draft["questions_for_patient"] = draft.get("questions_for_patient") or [
+            "How did the exercise feel today?", "Did you have any pain during or after the session?"]
+    return draft
+
+
 def template(facts: dict) -> dict:
     mv, ci = facts["movement"], facts.get("check_in") or {}
-    said = ci.get("transcript") or ci.get("comment") or "No comment from the patient."
+    said = ci.get("transcript") or ci.get("comment") or NO_COMMENT
     return {
         "patient_said": said[:400],
-        "movement_summary": f"{mv['reps_done'] or 0} {str(mv['exercise']).lower()} reps; {mv['reps_flagged']} flagged for review.",
+        "movement_summary": f"{mv['reps_done'] or 0} {str(mv['exercise_actually_done']).lower()} reps; {mv['reps_flagged']} flagged for review.",
         "agreement": "not_enough_info", "agreement_note": "Automatic summary; please review the video and reps.",
         "concerns": mv["session_flags"][:4], "questions_for_patient": [], "coaching_cues": [],
         "suggested_next_step": "Review the flagged reps and the patient's comments.",
@@ -185,6 +204,7 @@ def generate(session_id: str) -> dict:
         note = f"\n\nYour previous answer used numbers that are not in the facts ({', '.join(bad)}). Remove them."
     if draft is None:
         draft = template(facts)
+    draft = enforce(draft, facts)
     report = {**draft, "red_flags": flags, "urgent": bool(flags), "source": source, "model": LLM_MODEL if source == "llm" else None,
               "checks": {"numbers_verified": source == "llm", "problems": problems},
               "seconds": round(time.time() - t0, 1), "status": "draft_needs_physio_approval"}
