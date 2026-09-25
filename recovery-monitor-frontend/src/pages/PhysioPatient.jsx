@@ -27,33 +27,34 @@ export default function PhysioPatient({ patientId }) {
       <ErrorNote error={patient.error} />
       {intake && <IntakeNote intake={intake} />}
 
+      <Panel className="plan-wide" title="Exercise plan" subtitle={protocol ? `Version ${protocol.version} · ${fmtDateTime(protocol.created_at)}` : 'No plan yet: choose an exercise and send it to the patient'}>
+        <ProtocolEditor patientId={patientId} protocol={protocol} refs={refs.data} onSaved={patient.reload} suggested={intake?.ai?.suggested_exercise} areas={intake?.affected_areas} />
+      </Panel>
+
       <div className="grid-2">
+        <Panel title="Sessions" subtitle={history.data?.length ? `${history.data.length} recorded` : undefined}>
+          {history.data?.length ? (
+            <table className="table">
+              <thead><tr><th>Date</th><th>Reps</th><th>Flagged</th><th>Pain</th><th>Status</th><th>Decision</th></tr></thead>
+              <tbody>
+                {history.data.slice().reverse().map((s) => (
+                  <tr key={s.id} onClick={() => go(`/physio/session/${s.id}`)}>
+                    <td>{fmtDateTime(s.created_at)}</td>
+                    <td>{num(s.repetitions)}</td>
+                    <td>{s.repetitions != null ? s.repetitions - (s.correct_repetitions ?? 0) : '—'}</td>
+                    <td>{s.pain_score ?? '—'}</td>
+                    <td><FlagBadge flag={s.flag} /></td>
+                    <td>{s.review ? s.review.decision.replace('_', ' ') : 'pending'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : <p className="muted small">No sessions yet. They appear here once the patient records their first one.</p>}
+        </Panel>
         <Panel title="Recovery trend">
           <TrendChart sessions={history.data} targetDepth={protocol?.target_depth_deg} />
         </Panel>
-        <Panel title="Exercise plan" subtitle={protocol ? `Version ${protocol.version} · ${fmtDateTime(protocol.created_at)}` : 'No plan yet'}>
-          <ProtocolEditor patientId={patientId} protocol={protocol} refs={refs.data} onSaved={patient.reload} suggested={intake?.ai?.suggested_exercise} areas={intake?.affected_areas} />
-        </Panel>
       </div>
-
-      <Panel title="Sessions">
-        <table className="table">
-          <thead><tr><th>Date</th><th>Reps</th><th>Flagged reps</th><th>Median depth</th><th>Pain</th><th>Status</th><th>Decision</th></tr></thead>
-          <tbody>
-            {history.data?.slice().reverse().map((s) => (
-              <tr key={s.id} onClick={() => go(`/physio/session/${s.id}`)}>
-                <td>{fmtDateTime(s.created_at)}</td>
-                <td>{num(s.repetitions)}</td>
-                <td>{s.repetitions != null ? s.repetitions - (s.correct_repetitions ?? 0) : '—'}</td>
-                <td>{num(s.median_depth_deg, 0, '°')}</td>
-                <td>{s.pain_score ?? '—'}</td>
-                <td><FlagBadge flag={s.flag} /></td>
-                <td>{s.review ? s.review.decision.replace('_', ' ') : 'pending'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Panel>
     </div>
   );
 }
