@@ -153,7 +153,11 @@ NO_COMMENT = "The patient has not added a comment yet."
 def enforce(draft: dict, facts: dict) -> dict:
     """Facts the LLM must not get wrong are set by code, whatever it wrote."""
     ci = facts.get("check_in") or {}
-    if not (ci.get("transcript") or ci.get("comment")):
+    words = [w.strip() for w in (ci.get("transcript"), ci.get("comment")) if w and w.strip()]
+    if words:
+        # The patient's own words, verbatim: never a paraphrase the physio has to trust.
+        draft["patient_said"] = " / ".join(f"“{w}”" for w in words)[:600]
+    else:
         draft["patient_said"] = NO_COMMENT
         draft["agreement"] = "not_enough_info"
         draft["agreement_note"] = "Nothing to compare yet: the patient has not described how the session felt."

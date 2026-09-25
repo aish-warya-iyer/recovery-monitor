@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Activity, ArrowRight, BarChart3, Check, ClipboardList, HeartPulse, LockKeyhole, ShieldCheck, Sparkles, UserRound, Wifi, WifiOff } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from './api.js';
 import rehabMotionPerson from './assets/rehab-motion-person.png';
 import rehabMotionPersonStanding from './assets/rehab-motion-person-standing.png';
@@ -27,20 +27,31 @@ export default function App() {
   const health = usePoll(() => api.health(), 5000);
   const queue = usePoll(() => (area === 'physio' ? api.reviewQueue() : Promise.resolve(null)), 10000, [area]);
   const me = useLoad(() => api.authMe(), [area]);
-  const user = me.data?.user;
+  // Who is signed in, checked again on every page change. `checkedFor` makes sure a decision is only taken
+  // after the check for THIS page finished (not from a stale answer before sign-in).
+  const [auth, setAuth] = useState({ checkedFor: null, user: null });
+  useEffect(() => {
+    let alive = true;
+    api.authMe()
+      .then((r) => alive && setAuth({ checkedFor: area, user: r.user ?? null }))
+      .catch(() => alive && setAuth({ checkedFor: area, user: null }));
+    return () => { alive = false; };
+  }, [area]);
+  const checked = auth.checkedFor === area;
+  const user = checked ? auth.user : me.data?.user;
 
   // Page guard (the server enforces the same rules): signed-out users go to sign-in, patients only see their
   // own portal, therapists use the care-team pages.
   const needsLogin = area === 'patient' || area === 'physio';
   let redirect = null;
-  if (needsLogin && !me.loading && !user) redirect = '/signin';
+  if (needsLogin && checked && !user) redirect = '/signin';
   else if (user?.role === 'patient' && area === 'physio') redirect = `/patient/${user.id}`;
   else if (user?.role === 'patient' && area === 'patient' && a && a !== 'intake' && a !== user.id) redirect = `/patient/${user.id}`;
   else if (user?.role === 'therapist' && area === 'patient' && a && a !== 'intake') redirect = `/physio/patient/${a}`;
   useEffect(() => {
     if (redirect) go(redirect);
   }, [redirect]);
-  if (needsLogin && (me.loading && !user || redirect)) {
+  if (needsLogin && (!checked || redirect)) {
     return <div className="auth-shell"><p className="muted">Checking your sign-in…</p></div>;
   }
 
