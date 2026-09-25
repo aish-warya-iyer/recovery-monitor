@@ -5,6 +5,7 @@ import SessionPlayer from '../components/SessionPlayer.jsx';
 import TrendChart from '../components/TrendChart.jsx';
 import UploadPanel from '../components/UploadPanel.jsx';
 import VoiceRecorder from '../components/VoiceRecorder.jsx';
+import PatientTutorials from '../components/PatientTutorials.jsx';
 import { exerciseName } from '../exercises.js';
 import { Disclaimer, ErrorNote, Note, Panel, Stat } from '../components/ui.jsx';
 import { fmtDate, fmtDateTime, go, num, useLoad } from '../hooks.js';
@@ -52,6 +53,7 @@ export default function PatientHome({ patientId }) {
       <Panel title="Your therapist" subtitle="Your care connection" className="care-team-panel">
         {careTeam.data?.therapist ? <div className="care-team-person"><strong>{careTeam.data.therapist.name}</strong><span>{careTeam.data.therapist.email}</span><small>Your therapist can review your movement and approve plans.</small></div> : <Note>Your therapist will appear here after someone accepts your care request.</Note>}
       </Panel>
+      <PatientTutorials />
 
       {approvedIntake?.plan && !protocol && <Panel title="Therapist-approved plan" subtitle="Your therapist has approved this plan from your request."><div className="approved-plan-summary"><strong>{exerciseName(approvedIntake.plan.exercise)}</strong><span>{approvedIntake.plan.target_sets} sets · {approvedIntake.plan.target_reps} repetitions · pain alert at {approvedIntake.plan.pain_threshold}/10</span>{approvedIntake.plan.instructions && <small>{approvedIntake.plan.instructions}</small>}</div></Panel>}
       {intakes.data?.some((intake) => intake.status === 'pending') && !approvedIntake && <Note>Your therapist request is waiting for a therapist to review it.</Note>}
