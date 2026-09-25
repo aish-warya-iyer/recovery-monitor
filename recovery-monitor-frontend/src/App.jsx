@@ -1,11 +1,12 @@
 import * as React from 'react';
-import { Activity, ArrowRight, BarChart3, Check, ClipboardList, HeartPulse, LockKeyhole, ShieldCheck, Sparkles, UserRound, Wifi, WifiOff } from 'lucide-react';
+import { Activity, ArrowRight, BarChart3, Check, ClipboardList, HeartPulse, LockKeyhole, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api } from './api.js';
 import rehabMotionPerson from './assets/rehab-motion-person.png';
 import rehabMotionPersonStanding from './assets/rehab-motion-person-standing.png';
 import exerciseLibraryStrip from './assets/exercise-library-strip.png';
 import { go, useLoad, usePoll, useRoute } from './hooks.js';
+import { BrandMark, DeviceCard, NavGroup, Topbar } from './components/Shell.jsx';
 import Evaluation from './pages/Evaluation.jsx';
 import PatientHome from './pages/PatientHome.jsx';
 import PhysioPatient from './pages/PhysioPatient.jsx';
@@ -25,7 +26,7 @@ export default function App() {
   const isLanding = !area;
   const isAuthPage = ['signin', 'signup', 'role', 'onboarding'].includes(area);
   const health = usePoll(() => api.health(), 5000);
-  const queue = usePoll(() => (area === 'physio' ? api.reviewQueue() : Promise.resolve(null)), 10000, [area]);
+  const queue = usePoll(() => (area === 'physio' || area === 'evaluation' || area === 'privacy' ? api.reviewQueue().catch(() => null) : Promise.resolve(null)), 10000, [area]);
   const me = useLoad(() => api.authMe(), [area]);
   // Who is signed in, checked again on every page change. `checkedFor` makes sure a decision is only taken
   // after the check for THIS page finished (not from a stale answer before sign-in).
@@ -70,56 +71,46 @@ export default function App() {
   else if (area === 'privacy') page = <Privacy />;
   else page = <RolePicker user={me.data?.user} />;
 
-  const patientRouteId = a ?? me.data?.user?.id;
-  const nav = area === 'patient'
-    ? [[`/patient/${patientRouteId}`, 'My sessions', HeartPulse, true]]
-    : area === 'physio'
-      ? [['/physio', 'Review queue', ClipboardList, !a, queue.data?.length]]
+  // Keep the signed-in person's own section in the sidebar on the shared pages (Accuracy, Privacy) too.
+  const role = area === 'patient' || area === 'physio' ? area
+    : { therapist: 'physio', patient: 'patient' }[me.data?.user?.role] ?? null;
+  const patientRouteId = (area === 'patient' && a) || me.data?.user?.id;
+  const nav = role === 'patient'
+    ? [[`/patient/${patientRouteId}`, 'My sessions', HeartPulse, area === 'patient']]
+    : role === 'physio'
+      ? [['/physio', 'Review queue', ClipboardList, area === 'physio' && !a, queue.data?.length]]
       : [];
   const h = health.data;
+  const crumbs = area === 'physio'
+    ? [['Review queue', '/physio'], ...(a === 'session' ? [['Session review']] : a === 'patient' ? [['Patient']] : [])]
+    : area === 'patient' ? [['My recovery']]
+      : area === 'evaluation' ? [['Accuracy']] : area === 'privacy' ? [['Privacy']] : [['Recovery Monitor']];
 
   if (isAuthPage) return <div className="auth-shell">{page}</div>;
 
   return (
     <div className={`app-shell ${isLanding ? 'landing-shell' : ''}`}>
       <aside className="sidebar">
+        <div className="sidebar-aurora" aria-hidden="true" />
         <button className="brand" onClick={() => go('/')}>
-          <span className="brand-mark"><Activity size={18} /></span>
+          <BrandMark />
           <span><strong>Recovery Monitor</strong><small>On-device rehab evidence</small></span>
         </button>
-        {nav.length > 0 && <div className="nav-label">{area === 'patient' ? 'Patient' : 'Physiotherapist'}</div>}
-        <nav className="nav-list">
-          {nav.map(([path, label, Icon, active, count]) => (
-            <button key={path} className={`nav-item ${active ? 'active' : ''}`} onClick={() => go(path)}>
-              <Icon size={15} /> {label} {count ? <span className="nav-count">{count}</span> : null}
-            </button>
-          ))}
-        </nav>
+        {nav.length > 0 && <div className="nav-label">{role === 'patient' ? 'Patient' : 'Physiotherapist'}</div>}
+        {nav.length > 0 && <NavGroup items={nav.map(([path, label, Icon, active, count]) => (
+          { path, label, Icon, active, count, tint: role === 'patient' ? 'pink' : 'orange' }))} />}
         <div className="nav-label lower">About this system</div>
-        <nav className="nav-list">
-          <button className={`nav-item ${area === 'evaluation' ? 'active' : ''}`} onClick={() => go('/evaluation')}><BarChart3 size={15} /> Accuracy</button>
-          <button className={`nav-item ${area === 'privacy' ? 'active' : ''}`} onClick={() => go('/privacy')}><LockKeyhole size={15} /> Privacy</button>
-          <button className="nav-item" onClick={() => go('/')}><UserRound size={15} /> Switch role</button>
-        </nav>
+        <NavGroup items={[
+          { path: '/evaluation', label: 'Accuracy', Icon: BarChart3, tint: 'blue', active: area === 'evaluation' },
+          { path: '/privacy', label: 'Privacy', Icon: LockKeyhole, tint: 'green', active: area === 'privacy' },
+          { path: '/', label: 'Switch role', Icon: UserRound, tint: 'grey', active: false },
+        ]} />
         <div className="spacer" />
-        <div className="runtime-card">
-          <div className={`runtime-top ${h ? '' : 'down'}`}><span className="status-dot" /> {h ? 'Running on this device' : 'Service unreachable'}</div>
-          <strong>{h?.device ?? 'HP ZGX Nano'}</strong>
-          <span>{h?.inference_local ? 'All AI inference local · no cloud AI' : '—'}</span>
-        </div>
+        <DeviceCard health={h} />
       </aside>
 
       <main className="main-shell">
-        <div className="topbar">
-          <span className="crumb">{area === 'physio' ? 'Physiotherapist' : area === 'patient' ? 'Patient' : 'Recovery Monitor'}</span>
-          {h && (
-            <span className={`net-pill ${h.network_reachable ? 'online' : 'offline'}`}>
-              {h.network_reachable ? <Wifi size={13} /> : <WifiOff size={13} />}
-              {h.network_reachable ? 'Online · analysis stays on this device' : 'Offline · still working'}
-            </span>
-          )}
-          <AccountActions user={me.data?.user} />
-        </div>
+        <Topbar health={h} user={me.data?.user} crumbs={crumbs} />
         <div className="content">{page}</div>
       </main>
     </div>
@@ -225,12 +216,4 @@ function RolePicker({ user }) {
       <footer className="landing-footer"><span>Recovery Monitor</span><span>Demo experience · Not a medical device</span><span>Public sample data: REHAB24-6</span></footer>
     </div>
   );
-}
-
-function AccountActions({ user }) {
-  const [busy, setBusy] = React.useState(false);
-  if (!user) return null;
-  const profilePath = user.role === 'therapist' ? '/onboarding/therapist' : '/onboarding/patient';
-  const logout = async () => { setBusy(true); try { await api.authLogout(); } finally { go('/signin'); } };
-  return <div className="account-actions"><button className="account-profile" onClick={() => go(profilePath)}><UserRound size={15} /><span><strong>{user.email}</strong><small>{user.role === 'therapist' ? 'Therapist account' : 'Patient account'}</small></span></button><button className="account-button" onClick={() => go(profilePath)}>Edit profile</button><button className="account-button danger-text" disabled={busy} onClick={logout}>Log out</button></div>;
 }
