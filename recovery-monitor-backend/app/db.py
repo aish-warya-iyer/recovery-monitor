@@ -74,6 +74,84 @@ CREATE TABLE IF NOT EXISTS reviews (
     reviewer TEXT NOT NULL,
     created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('patient', 'therapist')),
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS auth_sessions (
+    token_hash TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS patient_profiles (
+    user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    affected_areas_json TEXT NOT NULL DEFAULT '[]',
+    goals_json TEXT NOT NULL DEFAULT '[]',
+    consent_local_analysis INTEGER NOT NULL DEFAULT 0,
+    completed_at TEXT
+);
+CREATE TABLE IF NOT EXISTS therapist_profiles (
+    user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    completed_at TEXT
+);
+CREATE TABLE IF NOT EXISTS therapist_specializations (
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    specialization TEXT NOT NULL,
+    PRIMARY KEY (user_id, specialization)
+);
+CREATE TABLE IF NOT EXISTS therapist_exercises (
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    exercise TEXT NOT NULL,
+    PRIMARY KEY (user_id, exercise)
+);
+CREATE TABLE IF NOT EXISTS patient_intakes (
+    id TEXT PRIMARY KEY,
+    patient_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    affected_areas_json TEXT NOT NULL,
+    issue_types_json TEXT NOT NULL,
+    when_it_happens_json TEXT NOT NULL,
+    pain_score INTEGER NOT NULL CHECK (pain_score BETWEEN 0 AND 10),
+    duration TEXT NOT NULL,
+    trend TEXT NOT NULL,
+    limitations_json TEXT NOT NULL,
+    goals_json TEXT NOT NULL,
+    notes TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    assigned_therapist_id TEXT REFERENCES users(id),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS plan_drafts (
+    id TEXT PRIMARY KEY,
+    intake_id TEXT NOT NULL REFERENCES patient_intakes(id) ON DELETE CASCADE,
+    therapist_user_id TEXT NOT NULL REFERENCES users(id),
+    exercise TEXT NOT NULL,
+    reference_video_id INTEGER REFERENCES reference_videos(id),
+    target_reps INTEGER NOT NULL,
+    target_sets INTEGER NOT NULL,
+    target_depth_deg REAL,
+    pain_threshold INTEGER NOT NULL,
+    instructions TEXT,
+    notes TEXT,
+    status TEXT NOT NULL DEFAULT 'plan_drafted',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS plan_approvals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    plan_id TEXT NOT NULL REFERENCES plan_drafts(id) ON DELETE CASCADE,
+    therapist_user_id TEXT NOT NULL REFERENCES users(id),
+    action TEXT NOT NULL,
+    notes TEXT,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS therapist_intake_decisions (intake_id TEXT NOT NULL REFERENCES patient_intakes(id) ON DELETE CASCADE, therapist_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, decision TEXT NOT NULL, created_at TEXT NOT NULL, PRIMARY KEY (intake_id, therapist_user_id));
 CREATE INDEX IF NOT EXISTS sessions_patient ON sessions(patient_id, created_at);
 """
 
