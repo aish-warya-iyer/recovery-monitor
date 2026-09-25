@@ -170,7 +170,8 @@ h1 { font-size: 27px; line-height: 1.15; margin-top: 5px; }
 .camera video { width: 100%; display: block; transform: scaleX(-1); }
 .camera-guide { position: absolute; top: 10px; left: 10px; right: 10px; text-align: center; color: #fff; background: rgba(11,31,51,.6); border-radius: 8px; padding: 6px; font-size: 13px; }
 .countdown { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-size: 88px; font-family: 'Space Grotesk'; background: rgba(11,31,51,.35); }
-.camera-actions { position: absolute; bottom: 12px; left: 0; right: 0; display: flex; justify-content: center; }
+.camera-actions { position: absolute; bottom: 12px; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.camera-close { color: #fff; border-color: rgba(255,255,255,.7); background: rgba(11,31,51,.65); }
 .progress { display: grid; gap: 7px; }
 .progress-top { display: flex; justify-content: space-between; font-size: 14px; }
 .bar { height: 8px; background: #e8eff5; border-radius: 6px; overflow: hidden; }
@@ -610,3 +611,58 @@ blockquote { margin: 0; padding: 8px 12px; border-left: 3px solid #cdbfea; color
 @media (prefers-reduced-motion: reduce) {
   .workflow-step, .workflow-number { transition: none; }
 }
+
+/* ---------- auth and onboarding ---------- */
+.auth-page { max-width: 680px; margin: 0 auto; display: grid; gap: 18px; }
+.auth-back { justify-self: start; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.auth-brand { display: flex; align-items: center; gap: 10px; }
+.auth-brand strong { display: block; font-family: 'Space Grotesk'; font-size: 15px; }
+.auth-brand small { display: block; color: var(--muted); font-size: 11px; }
+.auth-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 28px; display: grid; gap: 14px; }
+.auth-card h1 { margin-top: 0; }
+.auth-form { margin-top: 8px; gap: 12px; }
+.auth-form .primary-button { justify-self: start; margin-top: 5px; }
+.auth-switch { color: var(--muted); font-size: 13px; }
+.form-error { color: var(--red); background: var(--red-soft); border-radius: 7px; padding: 9px 11px; font-size: 13px; }
+.choice-row, .choice-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+.choice-button, .check-card { border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; background: #fff; color: var(--ink-2); font-size: 13px; }
+.choice-button.selected { border-color: var(--blue); color: var(--blue); background: var(--blue-soft); }
+.choice-field { border: 0; padding: 0; margin: 2px 0; display: grid; gap: 8px; }
+.choice-field legend { color: var(--ink-2); font-size: 12px; font-weight: 700; margin-bottom: 2px; }
+.check-card { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; }
+.check-card:has(input:checked) { border-color: var(--blue); background: var(--blue-soft); }
+.check-card input, .consent input { width: auto; }
+.consent { display: flex; align-items: flex-start; gap: 8px; color: var(--ink-2); font-size: 12px; line-height: 1.4; }
+.auth-choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+.auth-choice { display: grid; justify-items: start; gap: 9px; text-align: left; border: 1px solid var(--line); border-radius: 12px; padding: 18px; color: var(--blue); }
+.auth-choice:hover { border-color: #b9d4ec; background: #fbfdff; }
+.auth-choice strong { color: var(--ink); font-size: 16px; }
+.auth-choice span { color: var(--muted); font-size: 13px; line-height: 1.45; }
+@media (max-width: 700px) { .auth-card { padding: 21px; } .auth-choice-grid { grid-template-columns: 1fr; } }
+
+/* ---------- account and care connection ---------- */
+.account-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; z-index: 2; }
+.account-profile { display: inline-flex; align-items: center; gap: 7px; text-align: left; color: var(--ink-2); }
+.account-profile span { display: grid; gap: 1px; }
+.account-profile strong { font-size: 12px; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-profile small { color: var(--muted); font-size: 10px; }
+.account-button { border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; background: #fff; color: var(--ink-2); font-size: 11px; font-weight: 600; }
+.account-button:hover { border-color: #b9d4ec; background: #fbfdff; }
+.care-team-panel { border-left: 3px solid var(--blue); }
+.care-team-person { display: grid; gap: 4px; }
+.care-team-person strong { color: var(--ink); }
+.care-team-person span, .care-team-person small { color: var(--muted); font-size: 12px; }
+@media (max-width: 800px) { .account-actions { padding: 8px 0; border-bottom: 1px solid var(--line); justify-content: flex-end; flex-wrap: wrap; } }
+.intake-request-list { display: grid; gap: 10px; }
+.intake-request { display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--line); border-radius: 10px; padding: 13px; }
+.intake-request > div:first-child { display: grid; gap: 4px; }
+.intake-request span, .intake-request small { color: var(--muted); font-size: 12px; }
+.intake-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.intake-actions .primary-button, .intake-actions .secondary-button { padding: 8px 11px; font-size: 12px; }
+@media (max-width: 700px) { .intake-request { align-items: stretch; flex-direction: column; } .intake-actions { justify-content: flex-start; } }
+
+.landing-shell .account-actions { display: none; }
+
+.auth-shell { min-height: 100vh; padding: 40px 24px; background: var(--bg); }
+
+.intake-empty small { color: var(--muted); }

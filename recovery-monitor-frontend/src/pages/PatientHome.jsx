@@ -5,7 +5,7 @@ import SessionPlayer from '../components/SessionPlayer.jsx';
 import TrendChart from '../components/TrendChart.jsx';
 import UploadPanel from '../components/UploadPanel.jsx';
 import { Disclaimer, ErrorNote, Note, Panel, Stat } from '../components/ui.jsx';
-import { fmtDate, fmtDateTime, num, useLoad } from '../hooks.js';
+import { fmtDate, fmtDateTime, go, num, useLoad } from '../hooks.js';
 
 export default function PatientHome({ patientId }) {
   const patient = useLoad(() => api.patient(patientId), [patientId]);
@@ -13,6 +13,7 @@ export default function PatientHome({ patientId }) {
   const latestId = history.data?.length ? history.data[history.data.length - 1].id : null;
   const latest = useLoad(() => (latestId ? api.session(latestId) : Promise.resolve(null)), [latestId]);
   const refs = useLoad(() => api.referenceVideos(), []);
+  const careTeam = useLoad(() => api.patientCareTeam(), []);
 
   const protocol = patient.data?.protocol;
   const refVideo = refs.data?.find((r) => r.id === (latest.data?.review?.reference_video_id ?? protocol?.reference_video_id));
@@ -43,6 +44,9 @@ export default function PatientHome({ patientId }) {
         <div className={`patient-status ${needsReview ? 'review' : ''}`}><span /> {status}</div>
       </header>
       <ErrorNote error={patient.error || history.error} />
+      <Panel title="Your therapist" subtitle="Your care connection" className="care-team-panel">
+        {careTeam.data?.therapist ? <div className="care-team-person"><strong>{careTeam.data.therapist.name}</strong><span>{careTeam.data.therapist.email}</span><small>Your therapist can review your movement and approve plans.</small></div> : <Note>Your therapist will appear here after someone accepts your care request.</Note>}
+      </Panel>
 
       <section className="patient-overview" aria-label="Your recovery overview">
         <div className="overview-card overview-next">

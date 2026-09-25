@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Activity, ArrowRight, BarChart3, Check, ClipboardList, HeartPulse, LockKeyhole, ShieldCheck, Sparkles, UserRound, Wifi, WifiOff } from 'lucide-react';
 import { api } from './api.js';
 import rehabMotionPerson from './assets/rehab-motion-person.png';
@@ -10,29 +11,46 @@ import PhysioPatient from './pages/PhysioPatient.jsx';
 import PhysioQueue from './pages/PhysioQueue.jsx';
 import PhysioSession from './pages/PhysioSession.jsx';
 import Privacy from './pages/Privacy.jsx';
+import SignIn from './pages/SignIn.jsx';
+import SignUp from './pages/SignUp.jsx';
+import RoleSelect from './pages/RoleSelect.jsx';
+import PatientOnboarding from './pages/PatientOnboarding.jsx';
+import PatientIntake from './pages/PatientIntake.jsx';
+import TherapistOnboarding from './pages/TherapistOnboarding.jsx';
 
 export default function App() {
   const route = useRoute();
   const [area, a, b] = route;
   const isLanding = !area;
+  const isAuthPage = ['signin', 'signup', 'role', 'onboarding'].includes(area);
   const health = usePoll(() => api.health(), 5000);
   const queue = usePoll(() => (area === 'physio' ? api.reviewQueue() : Promise.resolve(null)), 10000, [area]);
+  const me = useLoad(() => api.authMe(), [area]);
 
   let page;
-  if (area === 'patient' && a) page = <PatientHome key={a} patientId={a} />;
+  if (area === 'signin') page = <SignIn />;
+  else if (area === 'signup') page = <SignUp />;
+  else if (area === 'role') page = <RoleSelect />;
+  else if (area === 'onboarding' && a === 'patient') page = <PatientOnboarding />;
+  else if (area === 'onboarding' && a === 'therapist') page = <TherapistOnboarding />;
+  else if (area === 'patient' && a === 'intake') page = <PatientIntake />;
+  else if (area === 'patient' && (a || me.data?.user?.role === 'patient')) page = <PatientHome key={a ?? me.data.user.id} patientId={a ?? me.data.user.id} />;
   else if (area === 'physio' && a === 'session' && b) page = <PhysioSession key={b} sessionId={b} />;
   else if (area === 'physio' && a === 'patient' && b) page = <PhysioPatient key={b} patientId={b} />;
   else if (area === 'physio') page = <PhysioQueue />;
   else if (area === 'evaluation') page = <Evaluation />;
   else if (area === 'privacy') page = <Privacy />;
-  else page = <RolePicker />;
+  else page = <RolePicker user={me.data?.user} />;
 
+  const patientRouteId = a ?? me.data?.user?.id;
   const nav = area === 'patient'
-    ? [[`/patient/${a}`, 'My sessions', HeartPulse, true]]
+    ? [[`/patient/${patientRouteId}`, 'My sessions', HeartPulse, true]]
     : area === 'physio'
       ? [['/physio', 'Review queue', ClipboardList, !a, queue.data?.length]]
       : [];
   const h = health.data;
+
+  if (isAuthPage) return <div className="auth-shell">{page}</div>;
 
   return (
     <div className={`app-shell ${isLanding ? 'landing-shell' : ''}`}>
@@ -72,6 +90,7 @@ export default function App() {
               {h.network_reachable ? 'Online · analysis stays on this device' : 'Offline · still working'}
             </span>
           )}
+          <AccountActions user={me.data?.user} />
         </div>
         <div className="content">{page}</div>
       </main>
@@ -79,7 +98,7 @@ export default function App() {
   );
 }
 
-function RolePicker() {
+function RolePicker({ user }) {
   const patients = useLoad(() => api.patients(), []);
   const demoPatient = patients.data?.[0];
   const scrollToStory = () => document.getElementById('story')?.scrollIntoView({ behavior: 'smooth' });
@@ -96,7 +115,7 @@ function RolePicker() {
           <button onClick={() => go('/evaluation')}>Accuracy</button>
           <button onClick={() => go('/privacy')}>Privacy</button>
         </nav>
-        <button className="nav-login" onClick={() => go('/physio')}>Sign in <ArrowRight size={15} /></button>
+        <button className="nav-login" onClick={() => go(user ? (user.role === 'therapist' ? '/physio' : `/patient/${user.id}`) : '/signin')}>{user ? 'Open dashboard' : 'Sign in'} <ArrowRight size={15} /></button>
       </header>
 
       <main>
@@ -106,8 +125,8 @@ function RolePicker() {
             <h1>The evidence layer <em>between appointments.</em></h1>
             <p className="hero-subtitle">Recovery Monitor turns everyday exercise into structured movement evidence—helping care teams see what is happening between visits, while keeping patients engaged in the work of recovery.</p>
             <div className="hero-actions">
-              <button className="primary-button hero-button" onClick={() => go(`/patient/${demoPatient?.id ?? 'jordan'}`)}>Explore the patient experience <ArrowRight size={16} /></button>
-              <button className="secondary-button hero-button" onClick={() => go('/physio')}>See the care-team workflow</button>
+              <button className="primary-button hero-button" onClick={() => go('/signin')}>Explore the patient experience <ArrowRight size={16} /></button>
+              <button className="secondary-button hero-button" onClick={() => go('/signin')}>See the care-team workflow</button>
             </div>
             <p className="landing-note"><ShieldCheck size={15} /> Private by design. Analysis runs on this device.</p>
           </div>
@@ -149,7 +168,7 @@ function RolePicker() {
         <section className="landing-proof">
           <div className="section-intro"><span className="eyebrow">Why this can matter at scale</span><h2>A clearer operating layer for recovery at home.</h2><p>Built around the moments that are usually invisible: the exercise, the signal, and the decision that follows.</p></div>
           <div className="proof-grid">
-            <article className="proof-card proof-card-featured"><span className="proof-kicker">For care teams</span><h3>Make remote progress reviewable.</h3><p>Bring structured movement evidence into the space between appointments, with flags that invite a professional review rather than replace one.</p><button className="proof-link" onClick={() => go('/physio')}>Open the review workflow <ArrowRight size={15} /></button></article>
+            <article className="proof-card proof-card-featured"><span className="proof-kicker">For care teams</span><h3>Make remote progress reviewable.</h3><p>Bring structured movement evidence into the space between appointments, with flags that invite a professional review rather than replace one.</p><button className="proof-link" onClick={() => go('/signin')}>Open the review workflow <ArrowRight size={15} /></button></article>
             <article className="proof-card"><span className="proof-kicker">For patients</span><h3>Make effort feel visible.</h3><p>Patients get a calmer feedback loop: record, understand the result, report how they feel, and keep going.</p></article>
             <article className="proof-card"><span className="proof-kicker">For organizations</span><h3>Privacy is part of the product.</h3><p>On-device inference keeps sensitive movement data close to the people and systems responsible for care.</p></article>
           </div>
@@ -160,12 +179,12 @@ function RolePicker() {
           <div className="role-grid">
             <div className="role-card landing-role-card patient-role">
               <div className="role-icon"><HeartPulse size={19} /></div><h2>For patients</h2><p>A gentle place to record today’s movement, understand the result, and share how your body feels.</p>
-              <button className="text-button" onClick={() => go(`/patient/${demoPatient?.id ?? 'jordan'}`)}>Patient login <ArrowRight size={15} /></button>
+              <button className="text-button" onClick={() => go('/signin')}>Patient login <ArrowRight size={15} /></button>
               {patients.error && <span className="muted small">Demo access is temporarily unavailable.</span>}
             </div>
             <div className="role-card landing-role-card physio-role">
               <div className="role-icon"><ClipboardList size={19} /></div><h2>For physiotherapists</h2><p>A focused review queue for the sessions that deserve a closer look, with the final decision always yours.</p>
-              <button className="text-button" onClick={() => go('/physio')}>Physiotherapist login <ArrowRight size={15} /></button>
+              <button className="text-button" onClick={() => go('/signin')}>Physiotherapist login <ArrowRight size={15} /></button>
             </div>
           </div>
         </section>
@@ -178,4 +197,12 @@ function RolePicker() {
       <footer className="landing-footer"><span>Recovery Monitor</span><span>Demo experience · Not a medical device</span><span>Public sample data: REHAB24-6</span></footer>
     </div>
   );
+}
+
+function AccountActions({ user }) {
+  const [busy, setBusy] = React.useState(false);
+  if (!user) return null;
+  const profilePath = user.role === 'therapist' ? '/onboarding/therapist' : '/onboarding/patient';
+  const logout = async () => { setBusy(true); try { await api.authLogout(); } finally { go('/signin'); } };
+  return <div className="account-actions"><button className="account-profile" onClick={() => go(profilePath)}><UserRound size={15} /><span><strong>{user.email}</strong><small>{user.role === 'therapist' ? 'Therapist account' : 'Patient account'}</small></span></button><button className="account-button" onClick={() => go(profilePath)}>Edit profile</button><button className="account-button danger-text" disabled={busy} onClick={logout}>Log out</button></div>;
 }

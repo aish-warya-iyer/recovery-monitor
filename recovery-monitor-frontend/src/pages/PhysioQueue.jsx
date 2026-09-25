@@ -7,7 +7,9 @@ import { fmtDateTime, go, usePoll } from '../hooks.js';
 export default function PhysioQueue() {
   const queue = usePoll(() => api.reviewQueue(), 5000);
   const patients = usePoll(() => api.patients(), 15000);
+  const intakes = usePoll(() => api.therapistIntakes(), 10000);
   const [filter, setFilter] = useState('all');
+  const [decisionError, setDecisionError] = useState(null);
   const sessions = queue.data ?? [];
   const patientList = patients.data ?? [];
   const urgentCount = sessions.filter((s) => s.flag?.severity === 'urgent').length;
@@ -27,59 +29,9 @@ export default function PhysioQueue() {
         </div>
         <span className="muted small">Updates automatically</span>
       </header>
-      <ErrorNote error={queue.error || patients.error} />
-
-      <section className="care-hero" aria-label="Care pulse">
-        <div>
-          <span className="eyebrow">Today’s care pulse</span>
-          <h2>Keep every review moving.</h2>
-          <p>Start with the sessions where movement evidence and patient-reported symptoms need your attention.</p>
-        </div>
-        <div className="care-hero-side">
-          <span className="care-live-dot"><i /> Local analysis active</span>
-          <strong>{urgentCount ? `${urgentCount} priority ${urgentCount === 1 ? 'session' : 'sessions'} first` : 'No priority flags'}</strong>
-          <button className="care-hero-link" onClick={() => setFilter(urgentCount ? 'urgent' : 'all')}>
-            {urgentCount ? 'Review priority sessions' : 'View all sessions'} <ArrowRight size={15} />
-          </button>
-        </div>
-      </section>
-
-      <section className="care-overview" aria-label="Care team overview">
-        <div className="care-stat"><div className="care-stat-icon amber"><AlertCircle size={17} /></div><span>Needs attention</span><strong>{queue.data ? sessions.length : '—'}</strong><small>flagged sessions waiting</small></div>
-        <div className="care-stat"><div className="care-stat-icon red"><AlertCircle size={17} /></div><span>Priority review</span><strong>{queue.data ? urgentCount : '—'}</strong><small>pain or urgent flags</small></div>
-        <div className="care-stat"><div className="care-stat-icon blue"><Users size={17} /></div><span>Active patients</span><strong>{patients.data ? patientList.length : '—'}</strong><small>with care plans or sessions</small></div>
-        <div className="care-stat"><div className="care-stat-icon green"><CheckCircle2 size={17} /></div><span>Workflow</span><strong>Review</strong><small>your decision stays final</small></div>
-      </section>
-
-      <Panel title={`${queue.data?.length ?? '—'} sessions waiting`} action={
-        <div className="queue-filters" role="group" aria-label="Filter review queue">
-          {[['all', 'All'], ['urgent', 'Priority'], ['form', 'Movement']].map(([value, label]) => (
-            <button key={value} className={filter === value ? 'on' : ''} onClick={() => setFilter(value)}>{label}</button>
-          ))}
-        </div>
-      }>
-        {queue.data?.length === 0 && (
-          <div className="empty-state"><Inbox size={22} /><p>Nothing to review. New flagged sessions appear here automatically.</p></div>
-        )}
-        {queue.data?.length > 0 && visibleSessions.length === 0 && (
-          <div className="empty-state"><CheckCircle2 size={22} /><p>No sessions match this filter.</p></div>
-        )}
-        <div className="queue">
-          {visibleSessions.map((s) => (
-            <button key={s.id} className="queue-row" onClick={() => go(`/physio/session/${s.id}`)}>
-              {s.thumbnail_url ? <img src={s.thumbnail_url} alt="" /> : <div className="thumb-empty" />}
-              <div className="queue-main">
-                <div className="queue-top">
-                  <strong>{s.patient?.name}</strong>
-                  <FlagBadge flag={s.flag} />
-                  <span className="muted small">{fmtDateTime(s.created_at)}</span>
-                </div>
-                <ul className="reasons">{s.flag?.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
-              </div>
-              <ChevronRight size={18} className="muted" />
-            </button>
-          ))}
-        </div>
+      <ErrorNote error={queue.error || patients.error || intakes.error || decisionError} />
+      <Panel title="Patient requests" subtitle="Choose which patients you want to take on.">
+        {intakes.data?.length ? <div className="intake-request-list">{intakes.data.map((intake) => <div className="intake-request" key={intake.id}><div><strong>{intake.patient?.name || intake.patient?.email || intake.patient_user_id}</strong><span>{intake.affected_areas?.join(', ')} · {intake.status}</span><small>{intake.notes || 'New patient care request'}</small></div><div className="intake-actions"><button className="primary-button" onClick={async () => { try { await api.claimIntake(intake.id); intakes.reload(); } catch (e) { setDecisionError(e); } }}>Accept patient</button><button className="secondary-button" onClick={async () => { try { await api.declineIntake(intake.id); intakes.reload(); } catch (e) { setDecisionError(e); } }}>Decline</button></div></div>)}</div> : <div className="empty-state intake-empty"><Inbox size={22} /><p>No patient requests yet.</p><small>When a patient submits an issue intake, it will appear here for you to accept or decline.</small></div>}
       </Panel>
 
       <Panel title="Patients" subtitle="Open a patient to review their trend and adjust their plan.">

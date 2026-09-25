@@ -1,4 +1,4 @@
-import { Camera, CircleStop, Trash2, Upload } from 'lucide-react';
+import { Camera, CircleStop, Trash2, Upload, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api, followSession } from '../api.js';
 import { ErrorNote, Note } from './ui.jsx';
@@ -26,6 +26,7 @@ export default function UploadPanel({ patientId, onDone }) {
   const stream = useRef(null);
   const recorder = useRef(null);
   const chunks = useRef([]);
+  const countdownTimer = useRef(null);
 
   useEffect(() => () => {
     stream.current?.getTracks().forEach((t) => t.stop());
@@ -86,11 +87,12 @@ export default function UploadPanel({ patientId, onDone }) {
   function startRecording() {
     let n = 3;
     setCountdown(n);
-    const id = setInterval(() => {
+    countdownTimer.current = setInterval(() => {
       n -= 1;
       setCountdown(n);
       if (n === 0) {
-        clearInterval(id);
+        clearInterval(countdownTimer.current);
+        countdownTimer.current = null;
         chunks.current = [];
         recorder.current = new MediaRecorder(stream.current);
         recorder.current.ondataavailable = (e) => e.data.size && chunks.current.push(e.data);
@@ -103,6 +105,21 @@ export default function UploadPanel({ patientId, onDone }) {
         setMode('recording');
       }
     }, 1000);
+  }
+
+  function closeCamera() {
+    if (countdownTimer.current) clearInterval(countdownTimer.current);
+    countdownTimer.current = null;
+    if (recorder.current && recorder.current.state !== 'inactive') {
+      recorder.current.onstop = null;
+      recorder.current.stop();
+    }
+    stream.current?.getTracks().forEach((t) => t.stop());
+    stream.current = null;
+    recorder.current = null;
+    chunks.current = [];
+    setCountdown(0);
+    setMode('idle');
   }
 
   const busy = mode === 'uploading' || mode === 'processing';
@@ -128,6 +145,7 @@ export default function UploadPanel({ patientId, onDone }) {
             {mode === 'recording' && (
               <button className="danger-button" onClick={() => recorder.current.stop()}><CircleStop size={15} /> Stop recording</button>
             )}
+            <button className="secondary-button camera-close" onClick={closeCamera}><X size={15} /> Close recording</button>
           </div>
         </div>
       )}
