@@ -36,17 +36,21 @@ def _protocol(protocol_id: int | None) -> dict:
 
 
 MAX_BASELINE_REPS = 10
+MODEL_EXERCISES = {"squat", "leg_lunge", "leg_abduction", "arm_abduction", "arm_vw", "push_ups"}
 
 
-def baseline_for(patient_id: str, before: str, exclude_id: str | None = None) -> list[dict]:
-    """Per-rep features from the patient's physio-approved sessions, newest first: every rep the physio
-    didn't mark incorrect (unlabelled reps count if the analysis judged them correct)."""
+def baseline_for(patient_id: str, before: str, exclude_id: str | None = None, exercise: str = "squat") -> list[dict]:
+    """Per-rep features from the patient's physio-approved sessions of the same exercise, newest first: every
+    rep the physio didn't mark incorrect (unlabelled reps count if the analysis judged them correct)."""
     out = []
     for r in db.all_("SELECT s.result_json, v.rep_labels_json FROM sessions s JOIN reviews v ON v.session_id = s.id "
                      "WHERE s.patient_id = ? AND v.decision = 'approve' AND s.created_at <= ? AND s.id != ? "
-                     "AND s.exercise = 'squat' ORDER BY s.created_at DESC", patient_id, before, exclude_id or ""):
+                     "ORDER BY s.created_at DESC", patient_id, before, exclude_id or ""):
         labels = db.loads(r["rep_labels_json"]) or {}
-        for rep in (db.loads(r["result_json"]) or {}).get("reps", []):
+        result = db.loads(r["result_json"]) or {}
+        if result.get("exercise", "squat") != exercise:
+            continue
+        for rep in result.get("reps", []):
             label = labels.get(str(rep["index"]))
             if rep.get("features") and (label == "correct" or (label is None and rep["predicted_correct"])):
                 out.append(rep["features"])
@@ -68,12 +72,13 @@ def run(session_id: str, raw_path: Path) -> None:
                   thumbnail_path=str(thumb) if thumb else None)
 
         protocol = _protocol(s["protocol_id"])
-        if s["exercise"] == "squat":
-            from model.analyze import analyze_video
+        if s["exercise"] in MODEL_EXERCISES:
+            from model.pipeline import run_pipeline
 
-            result = analyze_video(str(video), "squat", protocol, annotated_path=str(folder / "annotated.mp4"),
-                                   progress=lambda stage, f: set_stage(session_id, stage, f),
-                                   baseline=baseline_for(s["patient_id"], s["created_at"], session_id))
+            result = run_pipeline(str(video), s["exercise"], protocol, annotated_path=str(folder / "annotated.mp4"),
+                                  progress=lambda stage, f: set_stage(session_id, stage, f),
+                                  baseline=lambda ex: baseline_for(s["patient_id"], s["created_at"], session_id, ex),
+                                  work_dir=str(folder))
             annotated = str(folder / "annotated.mp4")
         else:
             from app.legacy import analyze_uploaded_video
@@ -89,6 +94,7 @@ def run(session_id: str, raw_path: Path) -> None:
             c.execute("UPDATE sessions SET status = ?, stage = 'done', progress = 1, result_json = ?, "
                       "annotated_path = ?, updated_at = ? WHERE id = ?",
                       (result["status"], json.dumps(result), annotated, db.now(), session_id))
+        submit_report(session_id)
     except VideoError as e:
         set_stage(session_id, "failed", status="failed", error=str(e))
     except Exception as e:  # noqa: BLE001 — a failed analysis must be visible, never a silent hang
@@ -98,3 +104,18 @@ def run(session_id: str, raw_path: Path) -> None:
 
 def submit(session_id: str, raw_path: Path):
     return _pool.submit(run, session_id, raw_path)
+
+
+_report_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="report")
+
+
+def submit_report(session_id: str):
+    """(Re)generate the AI draft report in the background; failures are logged, never block the app."""
+    def job():
+        try:
+            from app import report
+
+            report.generate(session_id)
+        except Exception:  # noqa: BLE001
+            traceback.print_exc()
+    return _report_pool.submit(job)

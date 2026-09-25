@@ -75,6 +75,18 @@ def review_session(session_id: str, body: ReviewIn):
     return store_review(session_id, body)
 
 
+@router.post("/sessions/{session_id}/report")
+async def regenerate_report(session_id: str):
+    """Rebuild the AI draft now (takes ~10-30 s with the local LLM) and return it."""
+    import asyncio
+
+    from app import report
+
+    if not db.one("SELECT 1 FROM sessions WHERE id = ? AND result_json IS NOT NULL", session_id):
+        raise HTTPException(404, "Session not found or not analysed yet")
+    return await asyncio.to_thread(report.generate, session_id)
+
+
 @router.get("/rep-corrections")
 def rep_corrections():
     """Physio rep labels that disagree with the model: future training data (#30)."""

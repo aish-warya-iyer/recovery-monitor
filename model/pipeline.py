@@ -356,6 +356,8 @@ def run_pipeline(video_path: str, planned_exercise: str | None = "squat", protoc
     if vlm_info and vlm_info["confidence"] >= 0.75 and vlm_info["exercise"] != exercise:
         exercise = vlm_info["exercise"]  # analyse what was actually done; the mismatch is flagged
 
+    if callable(baseline):  # backend passes a lookup: the baseline depends on the exercise actually done
+        baseline = baseline(exercise)
     if exercise == "squat":
         result = analyze_landmarks(lm, "squat", protocol, baseline)
         result["angle_series"]["label"] = "Knee angle"

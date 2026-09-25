@@ -9,16 +9,35 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from app import db
-from app.config import AI_ENDPOINTS, DEVICE_NAME, MODEL_RESULTS, REFERENCE_DIR
+from app.config import AI_ENDPOINTS, AI_SERVICE_URL, DEVICE_NAME, LLM_MODEL, LLM_URL, MODEL_RESULTS, REFERENCE_DIR
 from app.guards import is_local, network_reachable
 from app.video import VideoError, normalize
 
 router = APIRouter(prefix="/api", tags=["system"])
 
 
+async def _ai_status() -> dict:
+    import httpx
+
+    out = {}
+    async with httpx.AsyncClient(timeout=2) as c:
+        try:
+            r = await c.get(f"{AI_SERVICE_URL}/health")
+            out["vision_and_speech"] = r.json() if r.status_code == 200 else {"ok": False}
+        except httpx.HTTPError:
+            out["vision_and_speech"] = {"ok": False}
+        try:
+            r = await c.get(f"{LLM_URL}/api/tags")
+            out["llm"] = {"ok": r.status_code == 200, "model": LLM_MODEL, "server": LLM_URL}
+        except httpx.HTTPError:
+            out["llm"] = {"ok": False, "model": LLM_MODEL}
+    return out
+
+
 @router.get("/health")
 async def health():
     return {
+        "ai": await _ai_status(),
         "status": "ready",
         "device": DEVICE_NAME,
         "inference_local": all(is_local(u) for u in AI_ENDPOINTS),  # also enforced at startup
@@ -26,7 +45,9 @@ async def health():
         "network_required": False,
         "network_reachable": await asyncio.to_thread(network_reachable),
         "models": {"pose": "MediaPipe Pose Landmarker (full), on-device CPU",
-                   "classifier": "XGBoost squat rep classifier (model/artifacts/squat_xgb.json)"},
+                   "classifier": "XGBoost rep-correctness models, one per exercise (6)",
+                   "vision": "Qwen3-VL-4B + LoRA fine-tuned on REHAB24-6 (exercise, view, form)",
+                   "speech": "Whisper large-v3-turbo", "report": f"{LLM_MODEL} (local)"},
     }
 
 
@@ -46,6 +67,9 @@ def eval_summary():
         "rep_counting": reps and {"overall": reps["summary"]["all"], "recall_by_view": reps["recall_by_view"]},
         "classifier": clf and {k: clf[k] for k in ("evaluation", "threshold", "n_reps", "n_incorrect", "n_subjects",
                                                    "xgboost", "rules_baseline", "xgboost_by_view")},
+        "exercises": {e: load(f"exercise_{e}.json") for e in
+                      ("squat", "leg_lunge", "leg_abduction", "arm_abduction", "arm_vw", "push_ups")},
+        "vlm": {"before": load("vlm_zeroshot_test.json"), "after": load("vlm_qwen3vl4b_lora_test.json")},
         "caveats": [
             "Healthy volunteers acting out mistakes, not patients; not clinical validation.",
             "Rep-counter settings and the classifier's feature set were chosen while looking at this data.",

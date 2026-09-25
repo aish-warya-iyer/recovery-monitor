@@ -13,18 +13,23 @@ FIXTURE = json.loads((Path(__file__).resolve().parents[2] / "fixtures" / "analys
 
 @pytest.fixture()
 def client(monkeypatch):
-    import model.analyze
+    import app.jobs
+    import model.pipeline
 
-    def fake_analyze(path, exercise, protocol, annotated_path=None, progress=None, baseline=None):
+    def fake_pipeline(path, planned_exercise, protocol, baseline=None, annotated_path=None, progress=None,
+                      work_dir=None):
         if progress:
             progress("pose", 0.5)
         if annotated_path:
             shutil.copy(path, annotated_path)
+        if callable(baseline):
+            baseline = baseline(planned_exercise)
         r = json.loads(json.dumps(FIXTURE))
         r.update(protocol=protocol, baseline_seen=len(baseline or []))
         return r
 
-    monkeypatch.setattr(model.analyze, "analyze_video", fake_analyze)
+    monkeypatch.setattr(model.pipeline, "run_pipeline", fake_pipeline)
+    monkeypatch.setattr(app.jobs, "submit_report", lambda sid: None)  # LLM report tested separately
     from app.main import app
 
     with TestClient(app) as c:

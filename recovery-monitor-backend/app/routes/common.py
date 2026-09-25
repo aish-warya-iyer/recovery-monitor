@@ -59,6 +59,12 @@ def session_summary(row) -> dict:
     }
 
 
+def _report(session_id):
+    from app import report
+
+    return report.get(session_id)
+
+
 def session_detail(row) -> dict:
     result = db.loads(row["result_json"])
     check_in = _check_in(row["id"])
@@ -71,5 +77,6 @@ def session_detail(row) -> dict:
         "check_in": check_in,
         "flag": flag_for(row, result, check_in) if result else None,
         "review": latest_review(row["id"]),
+        "report": _report(row["id"]),
         **media_urls(row),
     }

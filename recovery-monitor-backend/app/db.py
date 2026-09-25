@@ -74,6 +74,11 @@ CREATE TABLE IF NOT EXISTS reviews (
     reviewer TEXT NOT NULL,
     created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS reports (
+    session_id TEXT PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE,
+    report_json TEXT NOT NULL,     -- AI draft for the physiotherapist (see app/report.py)
+    created_at TEXT NOT NULL
+);
 CREATE INDEX IF NOT EXISTS sessions_patient ON sessions(patient_id, created_at);
 """
 

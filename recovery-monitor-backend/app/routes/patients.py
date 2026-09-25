@@ -9,11 +9,11 @@ from app.routes.common import session_summary
 
 router = APIRouter(prefix="/api/patients", tags=["patients"])
 
-EXERCISES = ("squat", "seated_leg_extension")
+EXERCISES = ("squat", "leg_lunge", "leg_abduction", "arm_abduction", "arm_vw", "push_ups", "seated_leg_extension")
 
 
 class ProtocolIn(BaseModel):
-    exercise: str = Field("squat", pattern="^(squat|seated_leg_extension)$")
+    exercise: str = Field("squat", pattern="^(squat|leg_lunge|leg_abduction|arm_abduction|arm_vw|push_ups|seated_leg_extension)$")
     target_reps: int = Field(10, ge=1, le=100)
     target_depth_deg: float = Field(100, ge=30, le=175, description="knee angle at the bottom; smaller = deeper")
     pain_threshold: int = Field(5, ge=0, le=10)

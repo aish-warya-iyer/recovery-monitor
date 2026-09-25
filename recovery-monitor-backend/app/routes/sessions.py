@@ -130,6 +130,43 @@ def save_check_in(patient_id: str, session_id: str, body: CheckIn):
     return _store_check_in(session_id, body)
 
 
+@router.post("/patients/{patient_id}/sessions/{session_id}/voice")
+async def voice_note(patient_id: str, session_id: str, audio: UploadFile = File(...)):
+    """Patient's spoken description -> text with Whisper on this device. Returned for the patient to confirm;
+    it is stored only when they submit the check-in."""
+    s = _session_or_404(session_id)
+    if s["patient_id"] != patient_id:
+        raise HTTPException(404, "No such session for this patient")
+    folder = VIDEO_DIR / session_id
+    folder.mkdir(parents=True, exist_ok=True)
+    raw = folder / f"voice{Path(audio.filename or 'voice.webm').suffix or '.webm'}"
+    raw.write_bytes(await audio.read())
+    return await asyncio.to_thread(_transcribe, raw)
+
+
+def _transcribe(raw: Path) -> dict:
+    import subprocess
+
+    import httpx
+
+    from app.config import AI_SERVICE_URL
+    from app.video import FFMPEG
+
+    wav = raw.with_suffix(".wav")
+    r = subprocess.run([FFMPEG, "-y", "-loglevel", "error", "-i", str(raw), "-ac", "1", "-ar", "16000", str(wav)],
+                       capture_output=True, text=True)
+    if r.returncode or not wav.exists():
+        raise HTTPException(422, "Could not read the recording.")
+    try:
+        res = httpx.post(f"{AI_SERVICE_URL}/asr", json={"path": str(wav)}, timeout=120)
+        res.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(e.response.status_code, e.response.json().get("detail", "Transcription failed")) from e
+    except httpx.HTTPError as e:
+        raise HTTPException(503, "The on-device speech model is not running.") from e
+    return res.json() | {"model": "whisper-large-v3-turbo (on this device)"}
+
+
 def _store_check_in(session_id: str, body: CheckIn) -> dict:
     with db.tx() as c:
         c.execute("INSERT INTO check_ins (session_id, pain_score, stiffness, comment, transcript, created_at) "
@@ -138,7 +175,12 @@ def _store_check_in(session_id: str, body: CheckIn) -> dict:
                   "created_at=excluded.created_at",
                   (session_id, body.pain_score, None if body.stiffness is None else int(body.stiffness),
                    body.comment, body.transcript, db.now()))
-    return session_detail(_session_or_404(session_id))
+    s = _session_or_404(session_id)
+    if s["result_json"]:
+        from app.jobs import submit_report
+
+        submit_report(session_id)  # the patient's words change the report
+    return session_detail(s)
 
 
 @router.delete("/sessions/{session_id}", status_code=204)
@@ -148,5 +190,6 @@ def delete_session(session_id: str):
     shutil.rmtree(VIDEO_DIR / session_id, ignore_errors=True)
     with db.tx() as c:
         c.execute("DELETE FROM reviews WHERE session_id = ?", (session_id,))
+        c.execute("DELETE FROM reports WHERE session_id = ?", (session_id,))
         c.execute("DELETE FROM check_ins WHERE session_id = ?", (session_id,))
         c.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
