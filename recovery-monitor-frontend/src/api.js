@@ -79,7 +79,7 @@ export const api = {
 
   reviewQueue: () => request('/api/review-queue'),
   review: (sessionId, data) => request(`/api/sessions/${sessionId}/review`, json('POST', data)),
-  referenceVideos: () => request('/api/reference-videos?exercise=squat'),
+  referenceVideos: () => request('/api/reference-videos'),
 };
 
 // Live analysis progress over Server-Sent Events. Returns a function that stops listening.

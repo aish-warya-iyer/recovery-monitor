@@ -5,7 +5,7 @@ import SessionPlayer from '../components/SessionPlayer.jsx';
 import TrendChart from '../components/TrendChart.jsx';
 import UploadPanel from '../components/UploadPanel.jsx';
 import VoiceRecorder from '../components/VoiceRecorder.jsx';
-import { exerciseName } from '../exercises.js';
+import { exerciseName, prettyCondition } from '../exercises.js';
 import { Disclaimer, ErrorNote, Note, Panel, Stat } from '../components/ui.jsx';
 import { fmtDate, fmtDateTime, go, num, useLoad } from '../hooks.js';
 
@@ -46,7 +46,7 @@ export default function PatientHome({ patientId, view = 'today' }) {
         <div>
           <span className="eyebrow">{{ today: 'Today', progress: 'My progress', care: 'My care team' }[view]}</span>
           <h1>{view === 'today' ? `Hi ${patient.data?.name?.split(' ')[0] ?? ''}` : view === 'progress' ? 'Your progress' : 'Your care team'}</h1>
-          <p className="page-subtitle">{patient.data?.condition}</p>
+          <p className="page-subtitle">{prettyCondition(patient.data?.condition)}</p>
         </div>
         <div className={`patient-status ${needsReview ? 'review' : ''}`}><span /> {status}</div>
       </header>
@@ -123,7 +123,12 @@ export default function PatientHome({ patientId, view = 'today' }) {
                 )}
               </div>
               {carePlan.tempo && <p className="plan-line"><CalendarCheck size={14} /> {carePlan.tempo}</p>}
-              {carePlan.notes && <p className="plan-line"><MessageSquareText size={14} /> {carePlan.notes}</p>}
+              {carePlan.notes && (
+                <div className="physio-note">
+                  <span className="mini-label"><MessageSquareText size={13} /> From {careTeam.data?.therapist?.name || carePlan.approved_by || 'your physiotherapist'}</span>
+                  <p>{carePlan.notes}</p>
+                </div>
+              )}
               {refVideo && (
                 <div className="reference">
                   <span className="mini-label"><PlayCircle size={13} /> How it should look: {refVideo.title}</span>
@@ -137,7 +142,7 @@ export default function PatientHome({ patientId, view = 'today' }) {
         </Panel>
 
         <Panel title="Record today's session" subtitle="Your video is analysed on this device only">
-          <UploadPanel patientId={patientId} onDone={refresh} />
+          <UploadPanel patientId={patientId} onDone={refresh} exercise={carePlan?.exercise} />
         </Panel>
       </div>
 
@@ -274,7 +279,7 @@ function CheckIn({ patientId, sessionId, onSaved }) {
         ))}
       </div>
       <div className="pain-labels"><span>No pain</span><span>Worst pain</span></div>
-      <label className="check"><input type="checkbox" checked={stiff} onChange={(e) => setStiff(e.target.checked)} /> My knee felt stiff</label>
+      <label className="check"><input type="checkbox" checked={stiff} onChange={(e) => setStiff(e.target.checked)} /> It felt stiff</label>
       <VoiceRecorder patientId={patientId} sessionId={sessionId} onTranscript={setTranscript} />
       {transcript && (
         <label className="field">

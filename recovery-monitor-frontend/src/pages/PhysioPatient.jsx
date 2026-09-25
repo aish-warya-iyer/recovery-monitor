@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import TrendChart from '../components/TrendChart.jsx';
 import { ErrorNote, FlagBadge, Note, Panel } from '../components/ui.jsx';
-import { EXERCISES } from '../exercises.js';
+import { EXERCISES, prettyCondition } from '../exercises.js';
 import { fmtDateTime, go, num, useLoad } from '../hooks.js';
 
 export default function PhysioPatient({ patientId }) {
@@ -21,7 +21,7 @@ export default function PhysioPatient({ patientId }) {
         <div>
           <span className="eyebrow">Patient</span>
           <h1>{patient.data?.name}</h1>
-          <p className="page-subtitle">{patient.data?.condition}</p>
+          <p className="page-subtitle">{prettyCondition(patient.data?.condition)}</p>
         </div>
       </header>
       <ErrorNote error={patient.error} />
@@ -32,7 +32,7 @@ export default function PhysioPatient({ patientId }) {
           <TrendChart sessions={history.data} targetDepth={protocol?.target_depth_deg} />
         </Panel>
         <Panel title="Exercise plan" subtitle={protocol ? `Version ${protocol.version} · ${fmtDateTime(protocol.created_at)}` : 'No plan yet'}>
-          <ProtocolEditor patientId={patientId} protocol={protocol} refs={refs.data} onSaved={patient.reload} suggested={intake?.ai?.suggested_exercise} />
+          <ProtocolEditor patientId={patientId} protocol={protocol} refs={refs.data} onSaved={patient.reload} suggested={intake?.ai?.suggested_exercise} areas={intake?.affected_areas} />
         </Panel>
       </div>
 
@@ -58,22 +58,34 @@ export default function PhysioPatient({ patientId }) {
   );
 }
 
-function ProtocolEditor({ patientId, protocol, refs, onSaved, suggested }) {
+// Exercises that make sense to start from, per body area (mirrors the intake assistant's rules).
+const FITS = { knee: ['squat', 'leg_lunge'], hip: ['leg_abduction', 'squat', 'leg_lunge'], ankle_foot: ['leg_lunge', 'squat'],
+  back_core: ['squat', 'leg_abduction'], shoulder_arm: ['arm_abduction', 'arm_vw'], elbow_forearm: ['push_ups', 'arm_vw'],
+  wrist_hand: ['push_ups'] };
+const PLAN_EXERCISES = ['squat', 'leg_lunge', 'leg_abduction', 'arm_abduction', 'arm_vw', 'push_ups'];
+
+function ProtocolEditor({ patientId, protocol, refs, onSaved, suggested, areas = [] }) {
   const blank = { exercise: suggested || 'squat', target_reps: 10, target_depth_deg: 100, pain_threshold: 5, tempo: '', notes: '', reference_video_id: null };
   const [form, setForm] = useState(blank);
   const [state, setState] = useState({ saving: false, error: null, saved: false });
+  const refFor = (ex) => refs?.find((v) => v.exercise === ex)?.id ?? null;
   useEffect(() => {
     if (protocol) setForm({ ...blank, ...protocol });
-    else if (suggested) setForm((f) => ({ ...f, exercise: suggested }));
-  }, [protocol?.id, suggested]); // eslint-disable-line react-hooks/exhaustive-deps
+    else setForm((f) => ({ ...f, exercise: suggested || f.exercise, reference_video_id: refFor(suggested || f.exercise) }));
+  }, [protocol?.id, suggested, refs?.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === 'number' ? Number(e.target.value) : e.target.value }));
+  const choose = (ex) => setForm((f) => ({ ...f, exercise: ex, reference_video_id: refFor(ex) }));
+  const recommended = new Set(areas.flatMap((a) => FITS[a] ?? []));
+  const ordered = [...PLAN_EXERCISES].sort((x, y) => (y === suggested) - (x === suggested) || recommended.has(y) - recommended.has(x));
+  const exRefs = refs?.filter((v) => v.exercise === form.exercise) ?? [];
+  const ref = refs?.find((v) => v.id === Number(form.reference_video_id));
 
   async function save() {
     setState({ saving: true, error: null, saved: false });
     try {
       await api.setProtocol(patientId, {
-        exercise: form.exercise, target_reps: form.target_reps, target_depth_deg: form.target_depth_deg,
+        exercise: form.exercise, target_reps: form.target_reps, target_depth_deg: form.target_depth_deg ?? 100,
         pain_threshold: form.pain_threshold, tempo: form.tempo || null, notes: form.notes || null,
         reference_video_id: form.reference_video_id ? Number(form.reference_video_id) : null,
       });
@@ -85,32 +97,38 @@ function ProtocolEditor({ patientId, protocol, refs, onSaved, suggested }) {
   }
 
   return (
-    <div className="form">
-      <label className="field">
-        <span>Exercise</span>
-        <select value={form.exercise} onChange={set('exercise')}>
-          {Object.entries(EXERCISES).filter(([k]) => k !== 'seated_leg_extension').map(([k, v]) => (
-            <option key={k} value={k}>{v.name} · {v.area}</option>
-          ))}
-        </select>
-      </label>
+    <div className="form plan-editor">
+      <span className="field-label">Exercise</span>
+      <div className="ex-grid" role="radiogroup" aria-label="Exercise">
+        {ordered.map((k) => (
+          <button key={k} type="button" role="radio" aria-checked={form.exercise === k} className={`ex-tile ${form.exercise === k ? 'on' : ''}`} onClick={() => choose(k)}>
+            <strong>{EXERCISES[k].name}</strong>
+            <small>{EXERCISES[k].area}</small>
+            {k === suggested ? <span className="ex-tag ai">AI suggests</span> : recommended.has(k) ? <span className="ex-tag">Recommended</span> : null}
+          </button>
+        ))}
+      </div>
       <div className="form-row">
         <label className="field"><span>Repetitions</span><input type="number" min="1" max="100" value={form.target_reps} onChange={set('target_reps')} /></label>
-        <label className="field"><span>Target depth (knee °)</span><input type="number" min="30" max="175" value={form.target_depth_deg} onChange={set('target_depth_deg')} /></label>
-        <label className="field"><span>Pain alert at</span><input type="number" min="0" max="10" value={form.pain_threshold} onChange={set('pain_threshold')} /></label>
+        {form.exercise === 'squat' && (
+          <label className="field"><span>Target depth (knee °)</span><input type="number" min="30" max="175" value={form.target_depth_deg ?? 100} onChange={set('target_depth_deg')} /></label>
+        )}
+        <label className="field"><span>Pain alert at (0–10)</span><input type="number" min="0" max="10" value={form.pain_threshold} onChange={set('pain_threshold')} /></label>
       </div>
-      <label className="field"><span>Tempo</span><input value={form.tempo ?? ''} onChange={set('tempo')} placeholder="Slow and controlled, 2 s down" /></label>
-      <label className="field"><span>Notes for the patient</span><textarea rows={2} value={form.notes ?? ''} onChange={set('notes')} /></label>
+      <label className="field"><span>Tempo</span><input value={form.tempo ?? ''} onChange={set('tempo')} placeholder="Slow and controlled, 2 s down, 2 s up" /></label>
+      <label className="field"><span>Instructions for the patient</span><textarea rows={3} value={form.notes ?? ''} onChange={set('notes')}
+        placeholder="e.g. Keep your knee behind your toes. Stop if the pain goes above 5." /></label>
       <label className="field">
-        <span>Reference video</span>
+        <span>Reference video (correct form)</span>
         <select value={form.reference_video_id ?? ''} onChange={set('reference_video_id')}>
           <option value="">None</option>
-          {refs?.map((v) => <option key={v.id} value={v.id}>{v.title}</option>)}
+          {exRefs.map((v) => <option key={v.id} value={v.id}>{v.title}</option>)}
         </select>
       </label>
-      <Note>Smaller knee angle = deeper squat. Saving creates a new plan version; earlier sessions keep the plan they were done under.</Note>
-      <button className="primary-button" onClick={save} disabled={state.saving}><Save size={14} /> {state.saving ? 'Saving…' : 'Save new plan version'}</button>
-      {state.saved && <Note tone="ok">Saved. The patient sees the new plan next time they open the app.</Note>}
+      {ref && <video className="ref-preview" src={ref.url} controls muted playsInline preload="metadata" />}
+      {form.exercise === 'squat' && <Note>Smaller knee angle = deeper squat.</Note>}
+      <button className="primary-button" onClick={save} disabled={state.saving}><Save size={14} /> {state.saving ? 'Saving…' : protocol ? 'Save new plan version' : 'Send plan to patient'}</button>
+      {state.saved && <Note tone="ok">Sent. The patient sees this plan, your instructions and the video on their Today page.</Note>}
       <ErrorNote error={state.error} />
     </div>
   );
