@@ -79,6 +79,8 @@ export const api = {
   updateTutorial: (id, data) => request(`/api/tutorials/${id}`, json('PATCH', data)),
   approveTutorial: (id, notes = '') => request(`/api/tutorials/${id}/approve`, json('POST', { notes })),
   requestTutorialChanges: (id, notes = '') => request(`/api/tutorials/${id}/request-changes`, json('POST', { notes })),
+  generateTutorialMedia: (id, voiceEnabled = false) =>
+    request(`/api/tutorials/${id}/media`, json('POST', { voice_enabled: voiceEnabled })),
   patientTutorials: () => request('/api/patient/tutorials'),
 };
 

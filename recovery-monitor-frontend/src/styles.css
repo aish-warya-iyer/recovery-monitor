@@ -295,8 +295,11 @@ h1 { font-size: 27px; line-height: 1.15; margin-top: 5px; }
 .patient-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
 .patient-card { display: flex; gap: 12px; align-items: flex-start; text-align: left; border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
 .patient-card:hover { border-color: #b9d4ec; }
+.patient-card.unassigned, .patient-card.unassigned:hover { cursor: not-allowed; opacity: .72; border-style: dashed; transform: none; box-shadow: none; background: rgba(248,250,252,.76); }
+.patient-card:disabled { color: inherit; }
 .patient-card div { display: grid; gap: 3px; }
 .patient-card span { color: var(--muted); font-size: 12px; }
+.intake-assigned-label { color: #337a57; font-size: 12px; font-weight: 700; white-space: nowrap; }
 blockquote { margin: 0; padding: 8px 12px; border-left: 3px solid #cdbfea; color: var(--ink-2); background: #f7f3fd; border-radius: 0 8px 8px 0; font-size: 14px; }
 .field { display: grid; gap: 5px; font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 10px; }
 .form { display: grid; gap: 4px; }
